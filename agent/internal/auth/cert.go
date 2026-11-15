@@ -47,18 +47,29 @@ func LoadOrCreateCert(dir, hostname string, now time.Time) (tls.Certificate, err
 	if err != nil {
 		return tls.Certificate{}, err
 	}
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return tls.Certificate{}, fmt.Errorf("create %s: %w", dir, err)
+	// The agent and `pulse-agent pair` may both start on a fresh install. Each
+	// builds its pair in a private directory and renames it into place: the
+	// rename is atomic and fails once dir holds a pair, so exactly one wins and
+	// both then load the same files. Writing into dir directly let each side
+	// serve or print a different key.
+	if err := os.MkdirAll(filepath.Dir(dir), 0o700); err != nil {
+		return tls.Certificate{}, fmt.Errorf("create %s: %w", filepath.Dir(dir), err)
 	}
-	if err := os.WriteFile(keyPath, keyPEM, 0o600); err != nil {
-		return tls.Certificate{}, fmt.Errorf("write %s: %w", keyPath, err)
-	}
-	if err := os.WriteFile(certPath, certPEM, 0o600); err != nil {
-		return tls.Certificate{}, fmt.Errorf("write %s: %w", certPath, err)
-	}
-	cert, err = tls.X509KeyPair(certPEM, keyPEM)
+	staging, err := os.MkdirTemp(filepath.Dir(dir), filepath.Base(dir)+".tmp-")
 	if err != nil {
-		return tls.Certificate{}, fmt.Errorf("parse generated certificate: %w", err)
+		return tls.Certificate{}, fmt.Errorf("create staging directory: %w", err)
+	}
+	defer func() { _ = os.RemoveAll(staging) }()
+	if err := os.WriteFile(filepath.Join(staging, keyFile), keyPEM, 0o600); err != nil {
+		return tls.Certificate{}, fmt.Errorf("write key: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(staging, certFile), certPEM, 0o600); err != nil {
+		return tls.Certificate{}, fmt.Errorf("write certificate: %w", err)
+	}
+	renameErr := os.Rename(staging, dir)
+	cert, err = tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("load certificate from %s: %w", dir, errors.Join(err, renameErr))
 	}
 	return cert, nil
 }
