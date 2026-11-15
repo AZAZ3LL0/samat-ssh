@@ -1,0 +1,274 @@
+openapi: 3.1.0
+info:
+  title: Pulse Agent API
+  # Core version. Bump by 1 on every change to this file; append-only within /v1.
+  version: "1"
+  description: REST and WebSocket contract between the Pulse iOS app and pulse-agent.
+servers:
+  - url: https://{host}:{port}
+    variables:
+      host:
+        default: localhost
+      port:
+        default: "7443"
+security:
+  - bearerAuth: []
+
+# WebSocket topics multiplexed over GET /v1/ws. Payload names refer to components.schemas.
+x-ws-topics:
+  - topic: debug.echo
+    payload: any
+    params: null
+    description: Echoes the client payload back; used to verify the skeleton.
+  - topic: metrics.host
+    payload: HostMetrics
+    params: null
+    description: Host metrics snapshot every second.
+
+paths:
+  /v1/info:
+    get:
+      operationId: getInfo
+      summary: Agent versions, hostname and supported features
+      security: []
+      responses:
+        "200":
+          description: Agent info
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentInfo"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/pair:
+    post:
+      operationId: pair
+      summary: Exchange a one-time pairing code for a device token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PairRequest"
+      responses:
+        "200":
+          description: Device token
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PairResponse"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/metrics/host:
+    get:
+      operationId: getMetricsHost
+      summary: Current host metrics snapshot
+      responses:
+        "200":
+          description: Host metrics
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostMetrics"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/ws:
+    get:
+      operationId: connectWebSocket
+      summary: WebSocket upgrade; messages are WsEnvelope
+      responses:
+        "101":
+          description: Switching protocols
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  headers:
+    XRequestId:
+      description: Request identifier, present on every response.
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Error:
+      description: Error
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/XRequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+          description: For logs and debugging, not for display to the user.
+        requestId:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    ErrorCode:
+      type: string
+      description: Closed enum, extended append-only with a version bump.
+      enum:
+        - invalid_request
+        - unauthorized
+        - forbidden
+        - not_found
+        - conflict
+        - idempotency_conflict
+        - action_not_allowed
+        - unsupported
+        - upstream_unavailable
+        - rate_limited
+        - internal
+
+    AgentInfo:
+      type: object
+      required: [agentVersion, apiVersion, minClientApiVersion, hostname, features]
+      properties:
+        agentVersion:
+          type: string
+          description: Agent semver.
+        apiVersion:
+          type: integer
+          description: Core version.
+        minClientApiVersion:
+          type: integer
+        hostname:
+          type: string
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentFeature"
+
+    AgentFeature:
+      type: string
+      enum: [host_metrics, projects, docker, systemd, pm2, journald, history, actions, push]
+
+    PairRequest:
+      type: object
+      required: [code, deviceName]
+      properties:
+        code:
+          type: string
+        deviceName:
+          type: string
+          maxLength: 64
+
+    PairResponse:
+      type: object
+      required: [token, tokenId]
+      properties:
+        token:
+          type: string
+        tokenId:
+          type: string
+
+    WsEnvelope:
+      type: object
+      required: [type, ts]
+      properties:
+        type:
+          $ref: "#/components/schemas/WsMessageType"
+        topic:
+          type: [string, "null"]
+        seq:
+          type: [integer, "null"]
+          format: int64
+          description: Only in event and gap.
+        ts:
+          type: string
+          format: date-time
+        payload:
+          description: Schema depends on type and topic.
+
+    WsMessageType:
+      type: string
+      enum:
+        - subscribe
+        - unsubscribe
+        - subscribed
+        - event
+        - gap
+        - error
+        - ping
+        - pong
+        - echo
+
+    HostMetrics:
+      type: object
+      required: [ts, cpu, memory]
+      properties:
+        ts:
+          type: string
+          format: date-time
+        cpu:
+          type: object
+          required: [usageRatio, cores]
+          properties:
+            usageRatio:
+              type: number
+              format: double
+              description: Share of total host capacity, 0..1.
+            cores:
+              type: integer
+            perCoreRatio:
+              type: array
+              items:
+                type: number
+                format: double
+            iowaitRatio:
+              type: [number, "null"]
+              format: double
+            stealRatio:
+              type: [number, "null"]
+              format: double
+        memory:
+          type: object
+          required: [totalBytes, usedBytes, availableBytes]
+          properties:
+            totalBytes:
+              type: integer
+              format: int64
+            usedBytes:
+              type: integer
+              format: int64
+              description: total - available.
+            availableBytes:
+              type: integer
+              format: int64
+            cachedBytes:
+              type: [integer, "null"]
+              format: int64
