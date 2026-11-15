@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"sync"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -54,6 +55,32 @@ func TestReopenAppliesEachMigrationOnce(t *testing.T) {
 		}
 		if err := st.Close(); err != nil {
 			t.Fatalf("close store: %v", err)
+		}
+	}
+}
+
+// The agent and the CLI open a fresh database at the same moment on install.
+func TestConcurrentFirstOpensAllSucceed(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "pulse.db")
+	const opens = 12
+	errs := make([]error, opens)
+	var wg sync.WaitGroup
+	for i := range opens {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			st, err := Open(context.Background(), path)
+			if err != nil {
+				errs[i] = err
+				return
+			}
+			errs[i] = st.Close()
+		}()
+	}
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Errorf("open %d: %v", i, err)
 		}
 	}
 }
