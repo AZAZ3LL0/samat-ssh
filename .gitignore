@@ -1,0 +1,18 @@
+# Private project docs: never commit or push.
+CLAUDE.md
+tech.md
+
+.DS_Store
+.env
+.env.*
+
+# Go
+agent/bin/
+dist/
+
+# Swift / Xcode
+.build/
+.swiftpm/
+DerivedData/
+xcuserdata/
+*.xcuserstate
