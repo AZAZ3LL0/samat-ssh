@@ -168,6 +168,8 @@ components:
           type: integer
         hostname:
           type: string
+        probe:
+          type: string
         features:
           type: array
           items:
