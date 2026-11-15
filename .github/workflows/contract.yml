@@ -1,0 +1,31 @@
+name: contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: agent/go.mod
+          cache-dependency-path: agent/go.sum
+      - name: Check version bump and hand edits
+        if: github.event_name == 'pull_request'
+        run: scripts/check-contract.sh "origin/${{ github.base_ref }}"
+      - uses: actions/cache@v4
+        with:
+          path: ios/Tools/.build
+          key: swift-openapi-generator-${{ runner.os }}-${{ hashFiles('ios/Tools/Package.resolved') }}
+      - name: Regenerate and require a clean diff
+        run: make check-generate

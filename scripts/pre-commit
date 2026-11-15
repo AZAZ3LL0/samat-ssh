@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Local mirror of the contract.yml gate. Install with `make hooks`.
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+private="$(git diff --cached --name-only -- CLAUDE.md tech.md)"
+if [[ -n "$private" ]]; then
+  echo "pre-commit: refusing to commit private files: $private" >&2
+  exit 1
+fi
+
+scripts/check-contract.sh HEAD --staged
+
+# Regeneration is slow, so run it only when its inputs or outputs are staged.
+if [[ -n "$(git diff --cached --name-only -- api agent/internal/api agent/go.mod ios/Packages/AgentAPI ios/Tools)" ]]; then
+  make check-generate
+fi

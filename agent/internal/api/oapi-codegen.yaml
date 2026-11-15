@@ -1,0 +1,12 @@
+package: gen
+output: internal/api/gen/api.gen.go
+generate:
+  std-http-server: true
+  strict-server: true
+  models: true
+  embedded-spec: true
+output-options:
+  # Unknown values are sent as explicit null, so null must stay distinguishable from absent.
+  nullable-type: true
+  # WebSocket schemas are referenced by no REST path and would be pruned otherwise.
+  skip-prune: true
