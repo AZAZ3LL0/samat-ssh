@@ -3,15 +3,18 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/handlers"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/middleware"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/auth"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/ws"
 )
 
 const (
@@ -26,6 +29,7 @@ type Deps struct {
 	Hostname     string
 	Auth         *auth.Service
 	Limiter      *auth.Limiter
+	Hub          *ws.Hub
 	Logger       *slog.Logger
 }
 
@@ -53,9 +57,24 @@ func NewHandler(deps Deps) (http.Handler, error) {
 	badRequest := func(w http.ResponseWriter, r *http.Request, _ error) {
 		middleware.WriteError(w, r, http.StatusBadRequest, gen.InvalidRequest, "malformed request")
 	}
+	// The strict interface cannot take over the connection, so the upgrade
+	// happens here, after the auth middleware has accepted the token.
+	upgrade := func(next gen.StrictHandlerFunc, operationID string) gen.StrictHandlerFunc {
+		if operationID != "ConnectWebSocket" {
+			return next
+		}
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request, _ any) (any, error) {
+			if !strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+				middleware.WriteError(w, r, http.StatusBadRequest, gen.InvalidRequest, "websocket upgrade required")
+				return nil, nil
+			}
+			deps.Hub.Handle(w, r, middleware.RequestIDFrom(ctx))
+			return nil, nil
+		}
+	}
 	strict := gen.NewStrictHandlerWithOptions(
 		handlers.New(info, deps.Auth, deps.Limiter),
-		nil,
+		[]gen.StrictMiddlewareFunc{upgrade},
 		gen.StrictHTTPServerOptions{
 			RequestErrorHandlerFunc: badRequest,
 			ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

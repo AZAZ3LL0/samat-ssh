@@ -33,12 +33,13 @@ func (s *Server) GetMetricsHost(ctx context.Context, _ gen.GetMetricsHostRequest
 	}, nil
 }
 
-// ConnectWebSocket is not served until the WebSocket hub exists.
+// ConnectWebSocket exists to satisfy the generated interface: the router
+// upgrades the connection before a strict handler can run.
 func (s *Server) ConnectWebSocket(ctx context.Context, _ gen.ConnectWebSocketRequestObject) (gen.ConnectWebSocketResponseObject, error) {
 	return gen.ConnectWebSocketdefaultJSONResponse{
-		Body:       middleware.NewError(ctx, gen.Unsupported, "websocket is not available in this agent build"),
+		Body:       middleware.NewError(ctx, gen.Internal, "websocket upgrade was not handled"),
 		Headers:    errorHeaders(ctx),
-		StatusCode: http.StatusNotImplemented,
+		StatusCode: http.StatusInternalServerError,
 	}, nil
 }
 

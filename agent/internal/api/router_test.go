@@ -13,12 +13,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
+
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/contracttest"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/middleware"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/auth"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/store"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/ws"
 )
 
 const (
@@ -47,12 +50,16 @@ func newFixture(t *testing.T) *fixture {
 	f := &fixture{t: t, now: time.Date(2026, 11, 15, 10, 0, 0, 0, time.UTC)}
 	clock := func() time.Time { return f.now }
 	f.auth = auth.NewService(st, clock)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	hub := ws.NewHub(ws.DefaultConfig(), time.Now, logger)
+	t.Cleanup(hub.Close)
 	f.raw, err = api.NewHandler(api.Deps{
 		AgentVersion: "0.3.1",
 		Hostname:     "vps-1",
 		Auth:         f.auth,
 		Limiter:      auth.NewLimiter(clock),
-		Logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Hub:          hub,
+		Logger:       logger,
 	})
 	if err != nil {
 		t.Fatalf("build handler: %v", err)
@@ -309,5 +316,57 @@ func TestEveryResponseCarriesUniqueRequestID(t *testing.T) {
 			t.Errorf("%s %s reused request id %q", c.method, c.path, id)
 		}
 		seen[id] = true
+	}
+}
+
+func TestWebSocketWithoutUpgradeIsInvalidRequest(t *testing.T) {
+	f := newFixture(t)
+	token, _ := f.token()
+	wantError(t, f.get("/v1/ws", token), http.StatusBadRequest, gen.InvalidRequest)
+}
+
+func TestWebSocketUpgradeRequiresToken(t *testing.T) {
+	f := newFixture(t)
+	token, _ := f.token()
+	server := httptest.NewServer(f.raw)
+	defer server.Close()
+	url := "ws" + strings.TrimPrefix(server.URL, "http") + "/v1/ws"
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, response, err := websocket.Dial(ctx, url, nil)
+	if err == nil {
+		t.Fatal("upgrade without a token succeeded")
+	}
+	if response == nil || response.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("upgrade without a token: response %v, want 401", response)
+	}
+
+	socket, response, err := websocket.Dial(ctx, url, &websocket.DialOptions{
+		HTTPHeader: http.Header{"Authorization": {"Bearer " + token}},
+	})
+	if err != nil {
+		t.Fatalf("upgrade with a token: %v", err)
+	}
+	defer func() { _ = socket.CloseNow() }()
+	if response.StatusCode != http.StatusSwitchingProtocols || response.Header.Get(middleware.RequestIDHeader) == "" {
+		t.Errorf("upgrade answered %d with X-Request-Id %q, want 101 with an id",
+			response.StatusCode, response.Header.Get(middleware.RequestIDHeader))
+	}
+
+	sent := `{"type":"echo","ts":"2026-11-15T10:00:00.000Z","topic":"debug.echo","payload":{"n":1}}`
+	if err := socket.Write(ctx, websocket.MessageText, []byte(sent)); err != nil {
+		t.Fatalf("write echo: %v", err)
+	}
+	_, data, err := socket.Read(ctx)
+	if err != nil {
+		t.Fatalf("read echo: %v", err)
+	}
+	var reply gen.WsEnvelope
+	if err := json.Unmarshal(data, &reply); err != nil {
+		t.Fatalf("decode %q: %v", data, err)
+	}
+	if topic, _ := reply.Topic.Get(); reply.Type != gen.WsMessageTypeEcho || topic != "debug.echo" {
+		t.Errorf("reply = %s, want echo on debug.echo", data)
 	}
 }
