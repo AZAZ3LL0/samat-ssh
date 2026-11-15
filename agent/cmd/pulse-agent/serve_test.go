@@ -50,7 +50,7 @@ func startAgent(t *testing.T, configPath string) (baseURL string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() {
-		done <- withEnv(ctx, configPath, func(e env) error {
+		done <- withEnv(ctx, configPath, false, func(e env) error {
 			return serve(ctx, e, listener, slog.New(slog.NewTextHandler(io.Discard, nil)))
 		})
 	}()

@@ -190,3 +190,36 @@ func lineContaining(text, needle string) string {
 	}
 	return ""
 }
+
+// --fake must work for an unprivileged user whose config points at a
+// root-owned data dir, and every command must land in the same place.
+func TestFakeModeNeedsNoWritableConfiguredDataDir(t *testing.T) {
+	t.Setenv("TMPDIR", t.TempDir())
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(configPath, []byte("data_dir: /proc/pulse-agent-not-writable\n"), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if _, err := runCLI(t, configPath, "tokens", "list"); err == nil {
+		t.Fatal("the configured data dir is writable; the test proves nothing")
+	}
+
+	var out bytes.Buffer
+	if err := run(context.Background(), []string{"--config", configPath, "--fake", "pair", "--json"}, &out); err != nil {
+		t.Fatalf("--fake pair: %v", err)
+	}
+	var first pairing
+	if err := json.Unmarshal(out.Bytes(), &first); err != nil {
+		t.Fatalf("pair --json printed %q: %v", out.String(), err)
+	}
+	out.Reset()
+	if err := run(context.Background(), []string{"--config", configPath, "--fake", "pair", "--json"}, &out); err != nil {
+		t.Fatalf("second --fake pair: %v", err)
+	}
+	var second pairing
+	if err := json.Unmarshal(out.Bytes(), &second); err != nil {
+		t.Fatalf("pair --json printed %q: %v", out.String(), err)
+	}
+	if first.FP != second.FP {
+		t.Errorf("two --fake commands used different data dirs: fingerprints %s and %s", first.FP, second.FP)
+	}
+}

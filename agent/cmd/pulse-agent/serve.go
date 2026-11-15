@@ -87,7 +87,9 @@ func serve(ctx context.Context, e env, listener net.Listener, logger *slog.Logge
 		}
 	}()
 
-	logger.Info("listening", "addr", listener.Addr().String(), "version", version, "fingerprint", fingerprint)
+	logger.Info("listening",
+		"addr", listener.Addr().String(), "version", version, "fingerprint", fingerprint,
+		"fake", e.fake, "dataDir", e.cfg.DataDir)
 	if err := server.ServeTLS(listener, "", ""); !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("serve: %w", err)
 	}
