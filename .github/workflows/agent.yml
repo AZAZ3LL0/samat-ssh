@@ -1,0 +1,25 @@
+name: agent
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: agent-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: agent/go.mod
+          cache-dependency-path: agent/go.sum
+      - run: make agent-test
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1.6
+          working-directory: agent
