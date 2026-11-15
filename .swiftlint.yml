@@ -1,0 +1,16 @@
+included:
+  - ios
+excluded:
+  - ios/Packages/AgentAPI/Sources/Generated
+  - ios/Packages/.build
+  - ios/Tools/.build
+# swift-format owns layout, including trailing commas.
+disabled_rules:
+  - trailing_comma
+opt_in_rules:
+  - force_unwrapping
+force_cast: error
+force_try: error
+force_unwrapping: error
+line_length:
+  warning: 120
