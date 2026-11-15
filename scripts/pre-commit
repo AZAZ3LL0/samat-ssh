@@ -14,5 +14,7 @@ scripts/check-contract.sh HEAD --staged
 
 # Regeneration is slow, so run it only when its inputs or outputs are staged.
 if [[ -n "$(git diff --cached --name-only -- api agent/internal/api agent/go.mod ios/Packages/AgentAPI ios/Tools)" ]]; then
-  make check-generate
+  # git exports GIT_DIR and GIT_INDEX_FILE to hooks; they leak into the git
+  # checkouts SwiftPM makes for the generator and break them in a worktree.
+  env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE -u GIT_PREFIX make check-generate
 fi
