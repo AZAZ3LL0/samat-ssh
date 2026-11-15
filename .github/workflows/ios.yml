@@ -14,7 +14,20 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+      # The Swift dependencies need Swift 6.2 tools; the runner defaults to an older Xcode.
+      - name: Select Xcode 26
+        run: |
+          xcode="$(ls -d /Applications/Xcode_26*.app | sort -V | tail -n 1)"
+          echo "Using $xcode"
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
       - name: Install SwiftLint
         run: command -v swiftlint || brew install swiftlint
       - run: make lint-swift
-      - run: make ios-test
+      # Device names differ between Xcode releases, so take the first available iPhone.
+      - name: Pick a simulator
+        run: |
+          udid="$(xcrun simctl list devices available | sed -nE 's/^ +iPhone[^(]*\(([0-9A-F-]{36})\).*/\1/p' | head -n 1)"
+          test -n "$udid" || { xcrun simctl list devices available; echo "no iPhone simulator found"; exit 1; }
+          echo "IOS_DESTINATION=platform=iOS Simulator,id=$udid" >> "$GITHUB_ENV"
+      - run: make ios-test IOS_DESTINATION="$IOS_DESTINATION"
