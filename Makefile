@@ -50,8 +50,7 @@ agent-test: ## go test ./...
 ios-test: ## test the iOS package in the simulator
 	@# Xcode versions name the package scheme differently; ask instead of hardcoding
 	@# until the app project and its Pulse scheme exist.
-	cd ios/Packages && scheme="$$(xcodebuild -list -json 2>/dev/null | \
-		python3 -c 'import json,sys; print(json.load(sys.stdin)["workspace"]["schemes"][0])')" && \
+	cd ios/Packages && scheme="$$(xcodebuild -list -json | ../../scripts/first-scheme.py)" && \
 		xcodebuild test -scheme "$$scheme" -destination '$(IOS_DESTINATION)' -skipPackagePluginValidation
 
 hooks: ## install the pre-commit hook
