@@ -17,9 +17,10 @@ import (
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/store"
 )
 
-const usage = `usage: pulse-agent [--config <path>] <command>
+const usage = `usage: pulse-agent [--config <path>] [command]
 
 commands:
+  serve                run the agent (default)
   pair [--json]        print a one-time pairing code for a new device
   tokens list          list device tokens
   tokens revoke <id>   revoke a device token
@@ -57,12 +58,12 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 	}
 
 	switch command {
+	case "", "serve":
+		return withEnv(ctx, *configPath, func(e env) error { return runServe(ctx, e, os.Stderr) })
 	case "pair":
 		return withEnv(ctx, *configPath, func(e env) error { return runPair(ctx, e, rest, out) })
 	case "tokens":
 		return withEnv(ctx, *configPath, func(e env) error { return runTokens(ctx, e, rest, out) })
-	case "":
-		return usageError("missing command")
 	default:
 		return usageError(fmt.Sprintf("unknown command %q", command))
 	}
@@ -70,8 +71,9 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 
 // env is what every command needs: the config and the credential service.
 type env struct {
-	cfg  config.Config
-	auth *auth.Service
+	cfg   config.Config
+	store *store.Store
+	auth  *auth.Service
 }
 
 func withEnv(ctx context.Context, configPath string, fn func(env) error) error {
@@ -87,7 +89,7 @@ func withEnv(ctx context.Context, configPath string, fn func(env) error) error {
 		return err
 	}
 	defer func() { _ = st.Close() }()
-	return fn(env{cfg: cfg, auth: auth.NewService(st, time.Now)})
+	return fn(env{cfg: cfg, store: st, auth: auth.NewService(st, time.Now)})
 }
 
 // advertiseHost is the address the app dials: the configured one, else the hostname.

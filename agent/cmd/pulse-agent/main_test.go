@@ -166,7 +166,6 @@ func TestTokensListAndRevoke(t *testing.T) {
 func TestRunRejectsBadInvocation(t *testing.T) {
 	configPath := writeConfig(t)
 	for name, args := range map[string][]string{
-		"no command":       {},
 		"unknown command":  {"frobnicate"},
 		"tokens no action": {"tokens"},
 		"revoke no id":     {"tokens", "revoke"},
