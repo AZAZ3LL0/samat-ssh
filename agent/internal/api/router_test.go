@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -140,6 +141,20 @@ func wantError(t *testing.T, response *httptest.ResponseRecorder, status int, co
 	}
 }
 
+// coreVersion is info.version of the contract, which the agent reports as apiVersion.
+func coreVersion(t *testing.T) int {
+	t.Helper()
+	spec, err := gen.GetSpec()
+	if err != nil {
+		t.Fatalf("load embedded contract: %v", err)
+	}
+	version, err := strconv.Atoi(spec.Info.Version)
+	if err != nil {
+		t.Fatalf("contract version %q: %v", spec.Info.Version, err)
+	}
+	return version
+}
+
 func TestInfoIsPublicAndReportsCoreVersion(t *testing.T) {
 	f := newFixture(t)
 	response := f.get("/v1/info", "")
@@ -148,7 +163,9 @@ func TestInfoIsPublicAndReportsCoreVersion(t *testing.T) {
 	}
 	var raw map[string]any
 	decode(t, response, &raw)
-	want := map[string]any{"agentVersion": "0.3.1", "apiVersion": 1.0, "minClientApiVersion": 1.0, "hostname": "vps-1"}
+	want := map[string]any{
+		"agentVersion": "0.3.1", "apiVersion": float64(coreVersion(t)), "minClientApiVersion": 1.0, "hostname": "vps-1",
+	}
 	for key, value := range want {
 		if raw[key] != value {
 			t.Errorf("%s = %v, want %v", key, raw[key], value)

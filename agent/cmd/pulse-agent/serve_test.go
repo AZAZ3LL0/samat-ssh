@@ -80,8 +80,8 @@ func TestAgentServesPairedDeviceOverPinnedTLS(t *testing.T) {
 	}
 	var info gen.AgentInfo
 	decodeResponse(t, response, http.StatusOK, &info)
-	if info.ApiVersion != 1 || info.AgentVersion == "" {
-		t.Errorf("info = %+v, want apiVersion 1 and an agent version", info)
+	if info.ApiVersion < 1 || info.AgentVersion == "" {
+		t.Errorf("info = %+v, want a core version and an agent version", info)
 	}
 
 	response, err = client.Post(baseURL+"/v1/pair", "application/json",
