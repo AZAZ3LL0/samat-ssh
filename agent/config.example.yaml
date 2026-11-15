@@ -1,0 +1,11 @@
+# pulse-agent configuration. Installed at /etc/pulse-agent/config.yaml.
+# Every key is optional; the values below are the defaults.
+
+server:
+  host: 0.0.0.0
+  port: 7443
+  # Address the app dials, printed in the pairing link. Empty means the machine hostname.
+  advertise_host: ""
+
+# Database (pulse.db) and the generated TLS certificate (tls/) live here.
+data_dir: /var/lib/pulse-agent
