@@ -241,6 +241,106 @@ extension Components {
             case pong = "pong"
             case echo = "echo"
         }
+        /// Payload of a subscribe message.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WsSubscribePayload`.
+        public struct WsSubscribePayload: Codable, Hashable, Sendable {
+            /// Client-chosen id, unique per connection. Identifies the subscription.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WsSubscribePayload/requestId`.
+            public var requestId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/WsSubscribePayload/params`.
+            public struct ParamsPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `ParamsPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/WsSubscribePayload/params`.
+            public var params: Components.Schemas.WsSubscribePayload.ParamsPayload?
+            /// Creates a new `WsSubscribePayload`.
+            ///
+            /// - Parameters:
+            ///   - requestId: Client-chosen id, unique per connection. Identifies the subscription.
+            ///   - params:
+            public init(
+                requestId: Swift.String,
+                params: Components.Schemas.WsSubscribePayload.ParamsPayload? = nil
+            ) {
+                self.requestId = requestId
+                self.params = params
+            }
+            public enum CodingKeys: String, CodingKey {
+                case requestId
+                case params
+            }
+        }
+        /// Payload of an unsubscribe message.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WsUnsubscribePayload`.
+        public struct WsUnsubscribePayload: Codable, Hashable, Sendable {
+            /// requestId of the subscribe message being cancelled.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WsUnsubscribePayload/requestId`.
+            public var requestId: Swift.String
+            /// Creates a new `WsUnsubscribePayload`.
+            ///
+            /// - Parameters:
+            ///   - requestId: requestId of the subscribe message being cancelled.
+            public init(requestId: Swift.String) {
+                self.requestId = requestId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case requestId
+            }
+        }
+        /// Payload of a subscribed message.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WsSubscribedPayload`.
+        public struct WsSubscribedPayload: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WsSubscribedPayload/requestId`.
+            public var requestId: Swift.String
+            /// Creates a new `WsSubscribedPayload`.
+            ///
+            /// - Parameters:
+            ///   - requestId:
+            public init(requestId: Swift.String) {
+                self.requestId = requestId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case requestId
+            }
+        }
+        /// Payload of a gap message.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WsGapPayload`.
+        public struct WsGapPayload: Codable, Hashable, Sendable {
+            /// Number of events dropped from the subscription buffer.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WsGapPayload/dropped`.
+            public var dropped: Swift.Int64
+            /// Creates a new `WsGapPayload`.
+            ///
+            /// - Parameters:
+            ///   - dropped: Number of events dropped from the subscription buffer.
+            public init(dropped: Swift.Int64) {
+                self.dropped = dropped
+            }
+            public enum CodingKeys: String, CodingKey {
+                case dropped
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/HostMetrics`.
         public struct HostMetrics: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/HostMetrics/ts`.
