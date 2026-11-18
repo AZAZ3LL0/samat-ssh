@@ -46,12 +46,13 @@ let package = Package(
         ),
         .target(
             name: "DesignSystem",
+            dependencies: ["AgentKit"],
             path: "DesignSystem/Sources",
             resources: [.process("Resources")]
         ),
         .testTarget(
             name: "DesignSystemTests",
-            dependencies: ["DesignSystem"],
+            dependencies: ["DesignSystem", "AgentKit"],
             path: "DesignSystem/Tests/DesignSystemTests"
         ),
         .target(

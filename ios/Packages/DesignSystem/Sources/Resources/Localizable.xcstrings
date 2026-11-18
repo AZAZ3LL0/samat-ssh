@@ -12,6 +12,16 @@
         }
       }
     },
+    "Connecting…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение…"
+          }
+        }
+      }
+    },
     "Degraded" : {
       "localizations" : {
         "ru" : {
@@ -22,12 +32,63 @@
         }
       }
     },
+    "Docker, systemd or journald is unavailable on the server." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Docker, systemd или journald на сервере недоступны."
+          }
+        }
+      }
+    },
+    "Live" : {
+      "comment" : "Connection state: receiving live data",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Онлайн"
+          }
+        }
+      }
+    },
+    "Offline" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет связи"
+          }
+        }
+      }
+    },
+    "Request ID: %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID запроса: %@"
+          }
+        }
+      }
+    },
     "Restarting" : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перезапуск"
+          }
+        }
+      }
+    },
+    "Retry" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторить"
           }
         }
       }
@@ -52,12 +113,183 @@
         }
       }
     },
+    "The agent config does not allow this action." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Конфигурация агента не разрешает это действие."
+          }
+        }
+      }
+    },
+    "The agent failed to handle the request." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент не смог обработать запрос."
+          }
+        }
+      }
+    },
+    "The agent rejected the request." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент отклонил запрос."
+          }
+        }
+      }
+    },
+    "The agent sent an unexpected response." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент прислал неожиданный ответ."
+          }
+        }
+      }
+    },
+    "The request conflicts with the current state of the server." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрос противоречит текущему состоянию сервера."
+          }
+        }
+      }
+    },
+    "The server certificate changed. Pair the server again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сертификат сервера изменился. Подключите сервер заново."
+          }
+        }
+      }
+    },
+    "The server did not respond in time." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер не ответил вовремя."
+          }
+        }
+      }
+    },
+    "The server is unreachable." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер недоступен."
+          }
+        }
+      }
+    },
+    "The server no longer has this item." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На сервере этого больше нет."
+          }
+        }
+      }
+    },
+    "This device is not allowed to do that." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этому устройству это запрещено."
+          }
+        }
+      }
+    },
+    "This device lost access. Pair the server again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У устройства больше нет доступа. Подключите сервер заново."
+          }
+        }
+      }
+    },
+    "This request was already sent with different data." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот запрос уже отправлен с другими данными."
+          }
+        }
+      }
+    },
+    "This server does not support it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот сервер это не поддерживает."
+          }
+        }
+      }
+    },
+    "Too many attempts. Try again in a few minutes." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком много попыток. Повторите через несколько минут."
+          }
+        }
+      }
+    },
     "Unknown" : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Неизвестно"
+          }
+        }
+      }
+    },
+    "Update the agent: it speaks API version %lld, the app needs %lld." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновите агента: у него версия API %lld, приложению нужна %lld."
+          }
+        }
+      }
+    },
+    "Update the app: the agent needs API version %lld or newer." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновите приложение: агенту нужна версия API %lld или новее."
+          }
+        }
+      }
+    },
+    "Updated %@" : {
+      "comment" : "Connection state: cached data, %@ is a relative time",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновлено %@"
           }
         }
       }
