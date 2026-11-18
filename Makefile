@@ -9,7 +9,7 @@ IOS_DESTINATION ?= platform=iOS Simulator,name=iPhone 16
 BASE ?= origin/main
 
 .PHONY: help generate generate-go generate-swift check-generate check-contract \
-	lint lint-go lint-swift test agent-test ios-test hooks
+	lint lint-go lint-swift test agent-test agent-run agent-it ios-test hooks
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-18s %s\n", $$1, $$2}'
@@ -46,6 +46,12 @@ test: agent-test ios-test ## run all tests
 
 agent-test: ## go test ./...
 	cd agent && go test ./...
+
+agent-run: ## run the agent in fake mode: no root, Docker or systemd needed
+	cd agent && go run ./cmd/pulse-agent --fake --config config.example.yaml
+
+agent-it: ## build the agent image and run the API tests against a container
+	cd agent && go test -tags integration -count=1 ./integration/...
 
 ios-test: ## test the iOS package in the simulator
 	@# Xcode versions name the package scheme differently; ask instead of hardcoding

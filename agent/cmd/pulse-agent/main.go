@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -17,13 +18,18 @@ import (
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/store"
 )
 
-const usage = `usage: pulse-agent [--config <path>] [command]
+const usage = `usage: pulse-agent [--config <path>] [--fake] [command]
 
 commands:
   serve                run the agent (default)
   pair [--json]        print a one-time pairing code for a new device
   tokens list          list device tokens
   tokens revoke <id>   revoke a device token
+
+flags:
+  --config <path>      config file (default /etc/pulse-agent/config.yaml)
+  --fake               development mode: needs no root, Docker or systemd and
+                       keeps its data under the system temp directory
 `
 
 func main() {
@@ -49,6 +55,7 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 	flags := flag.NewFlagSet("pulse-agent", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	configPath := flags.String("config", config.DefaultPath, "path to config.yaml")
+	fake := flags.Bool("fake", false, "development mode")
 	if err := flags.Parse(args); err != nil {
 		return usageError(err.Error())
 	}
@@ -59,11 +66,11 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 
 	switch command {
 	case "", "serve":
-		return withEnv(ctx, *configPath, func(e env) error { return runServe(ctx, e, os.Stderr) })
+		return withEnv(ctx, *configPath, *fake, func(e env) error { return runServe(ctx, e, os.Stderr) })
 	case "pair":
-		return withEnv(ctx, *configPath, func(e env) error { return runPair(ctx, e, rest, out) })
+		return withEnv(ctx, *configPath, *fake, func(e env) error { return runPair(ctx, e, rest, out) })
 	case "tokens":
-		return withEnv(ctx, *configPath, func(e env) error { return runTokens(ctx, e, rest, out) })
+		return withEnv(ctx, *configPath, *fake, func(e env) error { return runTokens(ctx, e, rest, out) })
 	default:
 		return usageError(fmt.Sprintf("unknown command %q", command))
 	}
@@ -72,14 +79,21 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 // env is what every command needs: the config and the credential service.
 type env struct {
 	cfg   config.Config
+	fake  bool
 	store *store.Store
 	auth  *auth.Service
 }
 
-func withEnv(ctx context.Context, configPath string, fn func(env) error) error {
+func withEnv(ctx context.Context, configPath string, fake bool, fn func(env) error) error {
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		return err
+	}
+	if fake {
+		// The configured data dir belongs to root on a real install. Every
+		// command moves to the same place, so `--fake pair` reaches the
+		// database of a running `--fake` agent.
+		cfg.DataDir = fakeDataDir()
 	}
 	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
 		return fmt.Errorf("create data dir %s: %w", cfg.DataDir, err)
@@ -89,7 +103,12 @@ func withEnv(ctx context.Context, configPath string, fn func(env) error) error {
 		return err
 	}
 	defer func() { _ = st.Close() }()
-	return fn(env{cfg: cfg, store: st, auth: auth.NewService(st, time.Now)})
+	return fn(env{cfg: cfg, fake: fake, store: st, auth: auth.NewService(st, time.Now)})
+}
+
+// fakeDataDir is where --fake keeps the database and the certificate.
+func fakeDataDir() string {
+	return filepath.Join(os.TempDir(), "pulse-agent-fake")
 }
 
 // advertiseHost is the address the app dials: the configured one, else the hostname.

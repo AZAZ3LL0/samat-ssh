@@ -1,4 +1,8 @@
 version: "2"
+run:
+  # Integration tests are compiled only with this tag and would go unlinted.
+  build-tags:
+    - integration
 linters:
   default: standard
   enable:
