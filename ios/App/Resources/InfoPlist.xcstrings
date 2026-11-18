@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSFaceIDUsageDescription" : {
+      "comment" : "Privacy - Face ID Usage Description",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulse запрашивает Face ID перед остановкой, перезапуском или перезагрузкой чего-либо на ваших серверах."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulse asks for Face ID before it stops, restarts or reboots anything on your servers."
+          }
+        }
+      },
+      "extractionState" : "manual"
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,232 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "API version" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия API"
+          }
+        }
+      }
+    },
+    "Agent version" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия агента"
+          }
+        }
+      }
+    },
+    "Coming soon" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скоро"
+          }
+        }
+      }
+    },
+    "Debug" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отладка"
+          }
+        }
+      }
+    },
+    "Demo mode" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демо-режим"
+          }
+        }
+      }
+    },
+    "Demo server" : {
+      "comment" : "Name of the built-in server that runs on seed data",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демо-сервер"
+          }
+        }
+      }
+    },
+    "Design system" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дизайн-система"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        }
+      }
+    },
+    "Features" : {
+      "comment" : "Capabilities the agent reports",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Возможности"
+          }
+        }
+      }
+    },
+    "Hostname" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя хоста"
+          }
+        }
+      }
+    },
+    "Info" : {
+      "comment" : "Server tab",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Инфо"
+          }
+        }
+      }
+    },
+    "Logs" : {
+      "comment" : "Server tab",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Логи"
+          }
+        }
+      }
+    },
+    "No servers" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет серверов"
+          }
+        }
+      }
+    },
+    "Overview" : {
+      "comment" : "Server tab",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обзор"
+          }
+        }
+      }
+    },
+    "Pairing a server comes in a later update. Try the demo server meanwhile." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение сервера появится в следующем обновлении. Пока попробуйте демо-сервер."
+          }
+        }
+      }
+    },
+    "Projects" : {
+      "comment" : "Server tab",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проекты"
+          }
+        }
+      }
+    },
+    "Pulse cannot start" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulse не запускается"
+          }
+        }
+      }
+    },
+    "Select a server" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите сервер"
+          }
+        }
+      }
+    },
+    "Servers" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Серверы"
+          }
+        }
+      }
+    },
+    "The local cache is damaged. Reinstall the app to reset it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальный кэш повреждён. Переустановите приложение, чтобы сбросить его."
+          }
+        }
+      }
+    },
+    "This tab arrives in a later update." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта вкладка появится в следующем обновлении."
+          }
+        }
+      }
+    },
+    "Try demo" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть демо"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
