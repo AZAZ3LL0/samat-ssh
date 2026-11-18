@@ -15,6 +15,7 @@ require (
 	github.com/pb33f/libopenapi-validator v0.13.8
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.59.0
+	pgregory.net/rapid v1.3.0
 )
 
 require (
