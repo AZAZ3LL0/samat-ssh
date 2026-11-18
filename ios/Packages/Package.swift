@@ -3,10 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "PulsePackages",
+    defaultLocalization: "en",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "AgentAPI", targets: ["AgentAPI"]),
         .library(name: "AgentKit", targets: ["AgentKit"]),
+        .library(name: "DesignSystem", targets: ["DesignSystem"]),
         .library(name: "Fixtures", targets: ["Fixtures"]),
         .library(name: "Persistence", targets: ["Persistence"]),
     ],
@@ -41,6 +43,16 @@ let package = Package(
             name: "AgentKitTests",
             dependencies: ["AgentKit", "AgentAPI", "Fixtures"],
             path: "AgentKit/Tests/AgentKitTests"
+        ),
+        .target(
+            name: "DesignSystem",
+            path: "DesignSystem/Sources",
+            resources: [.process("Resources")]
+        ),
+        .testTarget(
+            name: "DesignSystemTests",
+            dependencies: ["DesignSystem"],
+            path: "DesignSystem/Tests/DesignSystemTests"
         ),
         .target(
             name: "Fixtures",
