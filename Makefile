@@ -4,12 +4,13 @@ SHELL := /bin/bash
 SPEC := api/openapi.yaml
 GO_GEN := agent/internal/api/gen
 SWIFT_GEN := ios/Packages/AgentAPI/Sources/Generated
-IOS_DESTINATION ?= platform=iOS Simulator,name=iPhone 16
+IOS_SIMULATOR ?= iPhone 16
+IOS_DESTINATION ?= platform=iOS Simulator,name=$(IOS_SIMULATOR)
 # Base ref for contract checks; CI passes the PR base.
 BASE ?= origin/main
 
 .PHONY: help generate generate-go generate-swift check-generate check-contract validate-fixtures \
-	lint lint-go lint-swift test agent-test agent-run agent-it ios-test hooks
+	lint lint-go lint-swift test agent-test agent-run agent-it ios-test ios-demo ios-project hooks
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-18s %s\n", $$1, $$2}'
@@ -56,11 +57,24 @@ agent-run: ## run the agent in fake mode: no root, Docker or systemd needed
 agent-it: ## build the agent image and run the API tests against a container
 	cd agent && go test -tags integration -count=1 ./integration/...
 
-ios-test: ## test the iOS package in the simulator
-	@# Xcode versions name the package scheme differently; ask instead of hardcoding
-	@# until the app project and its Pulse scheme exist.
+ios-test: ## test the iOS packages, then the app and its UI in demo mode
+	@# Package tests run from the package's aggregate scheme; Xcode versions name it
+	@# differently, so ask instead of hardcoding.
 	cd ios/Packages && scheme="$$(xcodebuild -list -json | ../../scripts/first-scheme.py)" && \
 		xcodebuild test -scheme "$$scheme" -destination '$(IOS_DESTINATION)' -skipPackagePluginValidation
+	xcodebuild test -project ios/Pulse.xcodeproj -scheme Pulse -destination '$(IOS_DESTINATION)' \
+		-skipPackagePluginValidation
+
+ios-demo: ## build and run the app in the simulator with -PulseDemo YES: seed data, no network
+	xcodebuild build -project ios/Pulse.xcodeproj -scheme Pulse -destination '$(IOS_DESTINATION)' \
+		-derivedDataPath .build/ios-demo -skipPackagePluginValidation
+	xcrun simctl boot '$(IOS_SIMULATOR)' 2>/dev/null || true
+	open -a Simulator
+	xcrun simctl install booted .build/ios-demo/Build/Products/Debug-iphonesimulator/Pulse.app
+	xcrun simctl launch --terminate-running-process booted dev.azaz3ll0.pulse -PulseDemo YES
+
+ios-project: ## regenerate ios/Pulse.xcodeproj from ios/project.yml (needs xcodegen)
+	cd ios && xcodegen generate --spec project.yml
 
 hooks: ## install the pre-commit hook
 	ln -sf ../../scripts/pre-commit .git/hooks/pre-commit
