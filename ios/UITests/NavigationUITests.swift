@@ -41,6 +41,8 @@ import XCTest
         debug.tap()
         app.buttons["Design system"].tap()
         XCTAssertTrue(app.navigationBars["Design system"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Palette"].exists)
+        // iOS 17 and 18 uppercase List section headers, iOS 26 does not.
+        let palette = app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Palette")).firstMatch
+        XCTAssertTrue(palette.waitForExistence(timeout: 5))
     }
 }
