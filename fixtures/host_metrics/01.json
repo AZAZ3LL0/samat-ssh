@@ -1,0 +1,21 @@
+{
+  "ts": "2026-11-15T10:00:00.000Z",
+  "cpu": {
+    "usageRatio": 0.18,
+    "cores": 4,
+    "perCoreRatio": [
+      0.22,
+      0.15,
+      0.2,
+      0.15
+    ],
+    "iowaitRatio": 0.012,
+    "stealRatio": 0.0
+  },
+  "memory": {
+    "totalBytes": 8589934592,
+    "usedBytes": 5476083302,
+    "availableBytes": 3113851290,
+    "cachedBytes": 1610612736
+  }
+}

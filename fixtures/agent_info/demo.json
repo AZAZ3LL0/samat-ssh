@@ -1,0 +1,7 @@
+{
+  "agentVersion": "0.1.0",
+  "apiVersion": 2,
+  "minClientApiVersion": 1,
+  "hostname": "demo",
+  "features": ["host_metrics"]
+}
