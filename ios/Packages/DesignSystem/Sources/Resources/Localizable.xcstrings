@@ -1,0 +1,17 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@/s" : {
+      "comment" : "Bytes per second",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/с"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
