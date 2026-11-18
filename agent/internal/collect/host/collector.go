@@ -9,6 +9,7 @@ import (
 
 	"github.com/oapi-codegen/nullable"
 
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/apitime"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 )
 
@@ -56,7 +57,7 @@ func (s *ProcSampler) Sample(_ context.Context) (gen.HostMetrics, error) {
 	s.mu.Unlock()
 
 	var m gen.HostMetrics
-	m.Ts = Timestamp(s.now())
+	m.Ts = apitime.New(s.now())
 	m.Cpu.Cores = usage.Cores
 	m.Cpu.UsageRatio = usage.UsageRatio()
 	perCore := usage.PerCoreRatio()
@@ -72,11 +73,6 @@ func (s *ProcSampler) Sample(_ context.Context) (gen.HostMetrics, error) {
 		m.Memory.CachedBytes = nullable.NewNullNullable[int64]()
 	}
 	return m, nil
-}
-
-// Timestamp brings t to the API time format: UTC with millisecond precision.
-func Timestamp(t time.Time) time.Time {
-	return t.UTC().Truncate(time.Millisecond)
 }
 
 // Collector samples the host every Interval, keeps the latest snapshot for

@@ -10,3 +10,10 @@ output-options:
   nullable-type: true
   # WebSocket schemas are referenced by no REST path and would be pruned otherwise.
   skip-prune: true
+  # time.Time drops zero fractional seconds; tech.md 6.2 fixes milliseconds on the wire.
+  type-mapping:
+    string:
+      formats:
+        date-time:
+          type: apitime.Time
+          import: github.com/AZAZ3LL0/samat-ssh/agent/internal/api/apitime

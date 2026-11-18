@@ -16,8 +16,8 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/apitime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oapi-codegen/nullable"
 	"github.com/oapi-codegen/runtime"
@@ -194,7 +194,7 @@ type HostMetrics struct {
 		// UsedBytes total - available.
 		UsedBytes int64 `json:"usedBytes"`
 	} `json:"memory"`
-	Ts time.Time `json:"ts"`
+	Ts apitime.Time `json:"ts"`
 }
 
 // PairRequest defines model for PairRequest.
@@ -217,7 +217,7 @@ type WsEnvelope struct {
 	// Seq Only in event and gap.
 	Seq   nullable.Nullable[int64]  `json:"seq,omitempty"`
 	Topic nullable.Nullable[string] `json:"topic,omitempty"`
-	Ts    time.Time                 `json:"ts"`
+	Ts    apitime.Time              `json:"ts"`
 	Type  WsMessageType             `json:"type"`
 }
 

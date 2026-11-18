@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/apitime"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/collect/host"
 )
@@ -57,6 +58,6 @@ func (s *HostSampler) Sample(context.Context) (gen.HostMetrics, error) {
 	m := s.snapshots[s.next]
 	s.next = (s.next + 1) % len(s.snapshots)
 	s.mu.Unlock()
-	m.Ts = host.Timestamp(s.now())
+	m.Ts = apitime.New(s.now())
 	return m, nil
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/oapi-codegen/nullable"
 
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/apitime"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/contracttest"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/handlers"
@@ -78,7 +79,8 @@ func get(t *testing.T, handler http.Handler, path, token string) *httptest.Respo
 
 func sample() gen.HostMetrics {
 	var m gen.HostMetrics
-	m.Ts = time.Date(2026, 11, 15, 10, 0, 0, 250_000_000, time.UTC)
+	// A whole second: the wire still carries three fractional digits.
+	m.Ts = apitime.New(time.Date(2026, 11, 15, 10, 0, 0, 0, time.UTC))
 	m.Cpu.UsageRatio = 0.42
 	m.Cpu.Cores = 2
 	m.Cpu.PerCoreRatio = &[]float64{0.5, 0.34}
@@ -100,10 +102,14 @@ func TestGetMetricsHostReturnsLatestSnapshot(t *testing.T) {
 	}
 
 	var raw struct {
+		Ts  string         `json:"ts"`
 		CPU map[string]any `json:"cpu"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &raw); err != nil {
 		t.Fatalf("decode: %v", err)
+	}
+	if raw.Ts != "2026-11-15T10:00:00.000Z" {
+		t.Errorf("ts = %q, want RFC 3339 UTC with milliseconds", raw.Ts)
 	}
 	if v, present := raw.CPU["stealRatio"]; !present || v != nil {
 		t.Errorf("stealRatio = %v (present %v), want an explicit null", v, present)
@@ -113,7 +119,7 @@ func TestGetMetricsHostReturnsLatestSnapshot(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 	want := sample()
-	if !got.Ts.Equal(want.Ts) || got.Cpu.UsageRatio != want.Cpu.UsageRatio || got.Memory.UsedBytes != want.Memory.UsedBytes {
+	if !got.Ts.Equal(want.Ts.Time) || got.Cpu.UsageRatio != want.Cpu.UsageRatio || got.Memory.UsedBytes != want.Memory.UsedBytes {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
