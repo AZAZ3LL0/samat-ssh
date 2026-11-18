@@ -56,6 +56,26 @@
         }
       }
     },
+    "Authentication failed. The action did not run." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аутентификация не прошла. Действие не выполнено."
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена"
+          }
+        }
+      }
+    },
     "Connecting…" : {
       "localizations" : {
         "ru" : {
@@ -143,6 +163,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Работает"
+          }
+        }
+      }
+    },
+    "Set a device passcode to confirm this action." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задайте код-пароль устройства, чтобы подтвердить действие."
           }
         }
       }
