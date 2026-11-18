@@ -1,0 +1,94 @@
+# Source of ios/Pulse.xcodeproj. Regenerate with `make ios-project` after editing.
+name: Pulse
+options:
+  bundleIdPrefix: dev.azaz3ll0
+  developmentLanguage: en
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+configs:
+  Debug: debug
+  Release: release
+  Demo: debug
+configFiles:
+  Debug: Config/Debug.xcconfig
+  Release: Config/Release.xcconfig
+  Demo: Config/Demo.xcconfig
+settings:
+  base:
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+packages:
+  PulsePackages:
+    path: Packages
+targets:
+  Pulse:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+    dependencies:
+      - package: PulsePackages
+        product: AgentKit
+      - package: PulsePackages
+        product: DesignSystem
+      - package: PulsePackages
+        product: Persistence
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Pulse
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Pulse asks for Face ID before it stops, restarts or reboots anything on your servers.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  PulseTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AppTests
+    dependencies:
+      - target: Pulse
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: dev.azaz3ll0.pulse.tests
+  PulseUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: Pulse
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: dev.azaz3ll0.pulse.uitests
+schemes:
+  Pulse:
+    build:
+      targets:
+        Pulse: all
+    run:
+      config: Debug
+      commandLineArguments:
+        "-PulseDemo YES": false
+    test:
+      config: Debug
+      targets:
+        - PulseTests
+        - PulseUITests
+    archive:
+      config: Release
+  Pulse Demo:
+    build:
+      targets:
+        Pulse: all
+    run:
+      config: Demo
+    archive:
+      config: Demo
