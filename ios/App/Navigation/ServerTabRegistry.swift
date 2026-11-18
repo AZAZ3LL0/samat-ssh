@@ -1,4 +1,5 @@
 import AgentKit
+import Overview
 import SwiftUI
 
 /// A tab of the server screen. A feature adds one element to `ServerTabRegistry.all`
@@ -15,16 +16,16 @@ struct ServerTab: Identifiable {
 }
 
 @MainActor enum ServerTabRegistry {
-    /// Overview, Projects and Logs are placeholders until their slices (S0.6, S2.2, S3.1)
-    /// replace `makeView`; Info shows `AgentInfo` until S5.1.
+    /// Projects and Logs are placeholders until their slices (S2.2, S3.1) replace
+    /// `makeView`; Info shows `AgentInfo` until S5.1.
     static let all: [ServerTab] = [
         ServerTab(
-            id: "overview",
+            id: OverviewTab.id,
             title: "Overview",
-            systemImage: "gauge.with.dots.needle.33percent",
-            requiredFeature: .hostMetrics,
-            requiredApiVersion: 1,
-            makeView: { _ in AnyView(UpcomingTab(systemImage: "gauge.with.dots.needle.33percent")) }
+            systemImage: OverviewTab.systemImage,
+            requiredFeature: OverviewTab.requiredFeature,
+            requiredApiVersion: OverviewTab.requiredApiVersion,
+            makeView: { context in AnyView(OverviewTab.makeView(context)) }
         ),
         ServerTab(
             id: "projects",

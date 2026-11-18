@@ -36,6 +36,8 @@ targets:
       - package: PulsePackages
         product: DesignSystem
       - package: PulsePackages
+        product: Overview
+      - package: PulsePackages
         product: Persistence
     settings:
       base:
