@@ -27,3 +27,8 @@ if [[ -n "$(git diff --cached --name-only -- api agent/internal/api agent/go.mod
     exit 1
   fi
 fi
+
+# Fixtures must keep matching the contract, whichever side changes.
+if [[ -n "$(git diff --cached --name-only -- fixtures api agent/internal/api/contracttest)" ]]; then
+  make validate-fixtures >/dev/null
+fi

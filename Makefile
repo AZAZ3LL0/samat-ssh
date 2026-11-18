@@ -8,7 +8,7 @@ IOS_DESTINATION ?= platform=iOS Simulator,name=iPhone 16
 # Base ref for contract checks; CI passes the PR base.
 BASE ?= origin/main
 
-.PHONY: help generate generate-go generate-swift check-generate check-contract \
+.PHONY: help generate generate-go generate-swift check-generate check-contract validate-fixtures \
 	lint lint-go lint-swift test agent-test agent-run agent-it ios-test hooks
 
 help:
@@ -32,6 +32,9 @@ check-generate: generate ## fail if generated code is stale or hand-edited
 
 check-contract: ## fail on a contract change without a version bump
 	scripts/check-contract.sh $(BASE)
+
+validate-fixtures: ## check fixtures/ against the contract schemas
+	cd agent && go test -count=1 -run '^TestFixtures' ./internal/api/contracttest/
 
 lint: lint-go lint-swift ## run all linters
 

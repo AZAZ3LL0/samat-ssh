@@ -29,3 +29,5 @@ jobs:
           key: swift-openapi-generator-${{ runner.os }}-${{ hashFiles('ios/Tools/Package.resolved') }}
       - name: Regenerate and require a clean diff
         run: make check-generate
+      - name: Validate fixtures against the contract
+        run: make validate-fixtures
