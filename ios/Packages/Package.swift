@@ -7,6 +7,7 @@ let package = Package(
     products: [
         .library(name: "AgentAPI", targets: ["AgentAPI"]),
         .library(name: "Fixtures", targets: ["Fixtures"]),
+        .library(name: "Persistence", targets: ["Persistence"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0")
@@ -32,6 +33,15 @@ let package = Package(
             name: "FixturesTests",
             dependencies: ["Fixtures"],
             path: "Fixtures/Tests/FixturesTests"
+        ),
+        .target(
+            name: "Persistence",
+            path: "Persistence/Sources"
+        ),
+        .testTarget(
+            name: "PersistenceTests",
+            dependencies: ["Persistence"],
+            path: "Persistence/Tests/PersistenceTests"
         ),
     ]
 )
