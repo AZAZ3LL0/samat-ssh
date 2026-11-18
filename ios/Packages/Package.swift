@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "AgentKit", targets: ["AgentKit"]),
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
         .library(name: "Fixtures", targets: ["Fixtures"]),
+        .library(name: "Overview", targets: ["Overview"]),
         .library(name: "Persistence", targets: ["Persistence"]),
     ],
     dependencies: [
@@ -65,6 +66,16 @@ let package = Package(
             name: "FixturesTests",
             dependencies: ["Fixtures"],
             path: "Fixtures/Tests/FixturesTests"
+        ),
+        .target(
+            name: "Overview",
+            dependencies: ["AgentKit", "DesignSystem"],
+            path: "Features/Overview/Sources/Overview"
+        ),
+        .testTarget(
+            name: "OverviewTests",
+            dependencies: ["Overview", "AgentKit"],
+            path: "Features/Overview/Tests/OverviewTests"
         ),
         .target(
             name: "Persistence",
