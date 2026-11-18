@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Pulse Agent API
   # Core version. Bump by 1 on every change to this file; append-only within /v1.
-  version: "1"
+  version: "2"
   description: REST and WebSocket contract between the Pulse iOS app and pulse-agent.
 servers:
   - url: https://{host}:{port}
@@ -226,6 +226,45 @@ components:
         - ping
         - pong
         - echo
+
+    WsSubscribePayload:
+      type: object
+      description: Payload of a subscribe message.
+      required: [requestId]
+      properties:
+        requestId:
+          type: string
+          description: Client-chosen id, unique per connection. Identifies the subscription.
+        params:
+          type: object
+          additionalProperties: true
+
+    WsUnsubscribePayload:
+      type: object
+      description: Payload of an unsubscribe message.
+      required: [requestId]
+      properties:
+        requestId:
+          type: string
+          description: requestId of the subscribe message being cancelled.
+
+    WsSubscribedPayload:
+      type: object
+      description: Payload of a subscribed message.
+      required: [requestId]
+      properties:
+        requestId:
+          type: string
+
+    WsGapPayload:
+      type: object
+      description: Payload of a gap message.
+      required: [dropped]
+      properties:
+        dropped:
+          type: integer
+          format: int64
+          description: Number of events dropped from the subscription buffer.
 
     HostMetrics:
       type: object

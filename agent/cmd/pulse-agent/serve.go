@@ -16,6 +16,7 @@ import (
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/middleware"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/auth"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/ws"
 )
 
 // version is the agent semver, set at release time with -ldflags "-X main.version=...".
@@ -54,11 +55,13 @@ func serve(ctx context.Context, e env, listener net.Listener, logger *slog.Logge
 	if err != nil {
 		return err
 	}
+	hub := ws.NewHub(ws.DefaultConfig(), time.Now, logger)
 	handler, err := api.NewHandler(api.Deps{
 		AgentVersion: version,
 		Hostname:     hostname,
 		Auth:         e.auth,
 		Limiter:      auth.NewLimiter(time.Now),
+		Hub:          hub,
 		Logger:       logger,
 	})
 	if err != nil {
@@ -75,6 +78,8 @@ func serve(ctx context.Context, e env, listener net.Listener, logger *slog.Logge
 	go purgeLoop(ctx, e, logger)
 	go func() {
 		<-ctx.Done()
+		// Shutdown does not know about upgraded connections; the hub closes them.
+		hub.Close()
 		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {

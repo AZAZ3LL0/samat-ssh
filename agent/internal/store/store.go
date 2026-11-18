@@ -19,6 +19,11 @@ import (
 //go:embed migrations/*.sql
 var embedded embed.FS
 
+const (
+	openRetryFor   = 5 * time.Second
+	openRetryEvery = 20 * time.Millisecond
+)
+
 // ErrNotFound reports a missing row.
 var ErrNotFound = errors.New("store: not found")
 
@@ -46,11 +51,36 @@ func open(ctx context.Context, path string, migrations fs.FS) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open database %s: %w", path, err)
 	}
-	if err := migrate(ctx, db, migrations); err != nil {
+	if err := migrateWithRetry(ctx, db, migrations); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("migrate database %s: %w", path, err)
 	}
 	return &Store{db: db}, nil
+}
+
+// migrateWithRetry rides out a concurrent first open. While another process
+// creates the file and switches it to WAL, SQLite reports SQLITE_BUSY at once
+// instead of waiting for busy_timeout, and the agent and `pulse-agent pair`
+// do start together on a fresh install.
+func migrateWithRetry(ctx context.Context, db *sql.DB, migrations fs.FS) error {
+	deadline := time.Now().Add(openRetryFor)
+	for {
+		err := migrate(ctx, db, migrations)
+		if err == nil || !isBusy(err) || time.Now().After(deadline) {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(openRetryEvery):
+		}
+	}
+}
+
+func isBusy(err error) bool {
+	var coded interface{ Code() int }
+	// The low byte is the primary result code; SQLITE_BUSY is 5.
+	return errors.As(err, &coded) && coded.Code()&0xff == 5
 }
 
 // Close releases the database.

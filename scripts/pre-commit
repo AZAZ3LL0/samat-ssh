@@ -13,8 +13,17 @@ fi
 scripts/check-contract.sh HEAD --staged
 
 # Regeneration is slow, so run it only when its inputs or outputs are staged.
+gen_paths=(agent/internal/api/gen ios/Packages/AgentAPI/Sources/Generated)
 if [[ -n "$(git diff --cached --name-only -- api agent/internal/api agent/go.mod ios/Packages/AgentAPI ios/Tools)" ]]; then
   # git exports GIT_DIR and GIT_INDEX_FILE to hooks; they leak into the git
   # checkouts SwiftPM makes for the generator and break them in a worktree.
-  env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE -u GIT_PREFIX make check-generate
+  env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE -u GIT_PREFIX make generate >/dev/null
+  # Compare the regenerated tree with the index, not with HEAD: a commit that
+  # carries regenerated code has it staged, and that is the correct state.
+  stale="$(git status --porcelain -- "${gen_paths[@]}" | grep -vE '^[MADR]  ' || true)"
+  if [[ -n "$stale" ]]; then
+    echo "$stale" >&2
+    echo 'pre-commit: generated code is stale: run make generate and stage the result' >&2
+    exit 1
+  fi
 fi

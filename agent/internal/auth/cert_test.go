@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 )
@@ -55,6 +56,43 @@ func TestLoadOrCreateCertIsStableAcrossRestarts(t *testing.T) {
 	}
 	if fp1 != fp2 {
 		t.Errorf("fingerprint changed across restarts: %s != %s", fp1, fp2)
+	}
+}
+
+// The agent and `pulse-agent pair` can both hit a fresh install at once; a
+// device paired with one key must not meet a server holding another.
+func TestConcurrentFirstStartsAgreeOnOneKey(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "data", "tls")
+	const starts = 16
+	fingerprints := make([]string, starts)
+	var wg sync.WaitGroup
+	for i := range starts {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			cert, err := LoadOrCreateCert(dir, "vps", time.Now())
+			if err != nil {
+				t.Errorf("start %d: %v", i, err)
+				return
+			}
+			fingerprints[i], err = Fingerprint(cert)
+			if err != nil {
+				t.Errorf("start %d fingerprint: %v", i, err)
+			}
+		}()
+	}
+	wg.Wait()
+	for i, fp := range fingerprints {
+		if fp != fingerprints[0] {
+			t.Fatalf("start %d got key %s, start 0 got %s", i, fp, fingerprints[0])
+		}
+	}
+	entries, err := os.ReadDir(filepath.Dir(dir))
+	if err != nil {
+		t.Fatalf("read data dir: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Errorf("data dir holds %d entries, want only tls (staging left behind)", len(entries))
 	}
 }
 
