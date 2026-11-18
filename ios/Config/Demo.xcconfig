@@ -1,0 +1,4 @@
+#include "Shared.xcconfig"
+
+// A build that always starts in demo mode: seed data, no network.
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG PULSE_DEMO
