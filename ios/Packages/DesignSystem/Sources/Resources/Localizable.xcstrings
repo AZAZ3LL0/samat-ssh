@@ -12,6 +12,50 @@
         }
       }
     },
+    "1 h" : {
+      "comment" : "Chart range: one hour",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 ч"
+          }
+        }
+      }
+    },
+    "24 h" : {
+      "comment" : "Chart range: one day",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24 ч"
+          }
+        }
+      }
+    },
+    "30 d" : {
+      "comment" : "Chart range: thirty days",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 д"
+          }
+        }
+      }
+    },
+    "7 d" : {
+      "comment" : "Chart range: one week",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 д"
+          }
+        }
+      }
+    },
     "Connecting…" : {
       "localizations" : {
         "ru" : {
