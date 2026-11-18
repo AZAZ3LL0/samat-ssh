@@ -18,14 +18,7 @@ import (
 // handler answers with a response the contract does not describe.
 func Middleware(t testing.TB) func(http.Handler) http.Handler {
 	t.Helper()
-	// The source file is read rather than the embedded copy, so the check
-	// does not depend on the generator having preserved the schema.
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("locate contracttest source")
-	}
-	specPath := filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "api", "openapi.yaml")
-	spec, err := os.ReadFile(specPath) //nolint:gosec // fixed path inside the repository
+	spec, err := os.ReadFile(RepoPath("api", "openapi.yaml"))
 	if err != nil {
 		t.Fatalf("read contract: %v", err)
 	}
@@ -58,4 +51,16 @@ func Middleware(t testing.TB) func(http.Handler) http.Handler {
 			_, _ = w.Write(recorder.Body.Bytes())
 		})
 	}
+}
+
+// RepoPath joins elem onto the repository root. The source tree is read rather
+// than an embedded copy, so checks do not depend on the generator having
+// preserved the schema.
+func RepoPath(elem ...string) string {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("contracttest: locate source file")
+	}
+	root := filepath.Join(filepath.Dir(file), "..", "..", "..", "..")
+	return filepath.Join(append([]string{root}, elem...)...)
 }

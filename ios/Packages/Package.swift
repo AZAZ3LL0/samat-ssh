@@ -5,7 +5,9 @@ let package = Package(
     name: "PulsePackages",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
-        .library(name: "AgentAPI", targets: ["AgentAPI"])
+        .library(name: "AgentAPI", targets: ["AgentAPI"]),
+        .library(name: "Fixtures", targets: ["Fixtures"]),
+        .library(name: "Persistence", targets: ["Persistence"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0")
@@ -20,6 +22,26 @@ let package = Package(
             name: "AgentAPITests",
             dependencies: ["AgentAPI"],
             path: "AgentAPI/Tests/AgentAPITests"
+        ),
+        .target(
+            name: "Fixtures",
+            path: "Fixtures/Sources",
+            // A symlink to the repository's fixtures/, so the app and the agent share one copy.
+            resources: [.copy("fixtures")]
+        ),
+        .testTarget(
+            name: "FixturesTests",
+            dependencies: ["Fixtures"],
+            path: "Fixtures/Tests/FixturesTests"
+        ),
+        .target(
+            name: "Persistence",
+            path: "Persistence/Sources"
+        ),
+        .testTarget(
+            name: "PersistenceTests",
+            dependencies: ["Persistence"],
+            path: "Persistence/Tests/PersistenceTests"
         ),
     ]
 )
