@@ -70,7 +70,8 @@ let package = Package(
         .target(
             name: "Overview",
             dependencies: ["AgentKit", "DesignSystem"],
-            path: "Features/Overview/Sources/Overview"
+            path: "Features/Overview/Sources/Overview",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "OverviewTests",
