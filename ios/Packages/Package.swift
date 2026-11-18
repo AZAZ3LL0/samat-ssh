@@ -6,11 +6,14 @@ let package = Package(
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "AgentAPI", targets: ["AgentAPI"]),
+        .library(name: "AgentKit", targets: ["AgentKit"]),
         .library(name: "Fixtures", targets: ["Fixtures"]),
         .library(name: "Persistence", targets: ["Persistence"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0")
+        .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0"),
+        .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.1.0"),
+        .package(url: "https://github.com/apple/swift-http-types", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -22,6 +25,22 @@ let package = Package(
             name: "AgentAPITests",
             dependencies: ["AgentAPI"],
             path: "AgentAPI/Tests/AgentAPITests"
+        ),
+        .target(
+            name: "AgentKit",
+            dependencies: [
+                "AgentAPI",
+                "Fixtures",
+                .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+                .product(name: "OpenAPIURLSession", package: "swift-openapi-urlsession"),
+                .product(name: "HTTPTypes", package: "swift-http-types"),
+            ],
+            path: "AgentKit/Sources"
+        ),
+        .testTarget(
+            name: "AgentKitTests",
+            dependencies: ["AgentKit", "AgentAPI", "Fixtures"],
+            path: "AgentKit/Tests/AgentKitTests"
         ),
         .target(
             name: "Fixtures",
