@@ -18,7 +18,7 @@ import (
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/store"
 )
 
-const usage = `usage: pulse-agent [--config <path>] [--fake] [command]
+const usage = `usage: pulse-agent [--config <path>] [--fake [--fixtures <dir>]] [command]
 
 commands:
   serve                run the agent (default)
@@ -30,6 +30,8 @@ flags:
   --config <path>      config file (default /etc/pulse-agent/config.yaml)
   --fake               development mode: needs no root, Docker or systemd and
                        keeps its data under the system temp directory
+  --fixtures <dir>     seed data replayed by --fake (default ../fixtures,
+                       the repository's fixtures/ seen from agent/)
 `
 
 func main() {
@@ -56,6 +58,7 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 	flags.SetOutput(io.Discard)
 	configPath := flags.String("config", config.DefaultPath, "path to config.yaml")
 	fake := flags.Bool("fake", false, "development mode")
+	fixtures := flags.String("fixtures", "../fixtures", "seed data for --fake")
 	if err := flags.Parse(args); err != nil {
 		return usageError(err.Error())
 	}
@@ -66,7 +69,10 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 
 	switch command {
 	case "", "serve":
-		return withEnv(ctx, *configPath, *fake, func(e env) error { return runServe(ctx, e, os.Stderr) })
+		return withEnv(ctx, *configPath, *fake, func(e env) error {
+			e.fixtures = *fixtures
+			return runServe(ctx, e, os.Stderr)
+		})
 	case "pair":
 		return withEnv(ctx, *configPath, *fake, func(e env) error { return runPair(ctx, e, rest, out) })
 	case "tokens":
@@ -82,6 +88,8 @@ type env struct {
 	fake  bool
 	store *store.Store
 	auth  *auth.Service
+	// fixtures is the seed data directory --fake serves; only serve reads it.
+	fixtures string
 }
 
 func withEnv(ctx context.Context, configPath string, fake bool, fn func(env) error) error {

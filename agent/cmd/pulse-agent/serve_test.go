@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -51,6 +52,9 @@ func startAgent(t *testing.T, configPath string) (baseURL string) {
 	done := make(chan error, 1)
 	go func() {
 		done <- withEnv(ctx, configPath, false, func(e env) error {
+			// Fake collectors keep the test independent of the host's /proc;
+			// the data dir stays the test's own.
+			e.fake, e.fixtures = true, filepath.Join("..", "..", "..", "fixtures")
 			return serve(ctx, e, listener, slog.New(slog.NewTextHandler(io.Discard, nil)))
 		})
 	}()
@@ -101,8 +105,11 @@ func TestAgentServesPairedDeviceOverPinnedTLS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /v1/metrics/host: %v", err)
 	}
-	var notReady gen.Error
-	decodeResponse(t, response, http.StatusNotImplemented, &notReady)
+	var metrics gen.HostMetrics
+	decodeResponse(t, response, http.StatusOK, &metrics)
+	if metrics.Cpu.Cores == 0 || metrics.Memory.TotalBytes == 0 {
+		t.Errorf("metrics = %+v, want a snapshot from the fixtures", metrics)
+	}
 
 	if out, err := runCLI(t, configPath, "tokens", "revoke", paired.TokenId); err != nil {
 		t.Fatalf("tokens revoke: %v (%s)", err, out)
