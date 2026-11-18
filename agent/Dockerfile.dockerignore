@@ -1,0 +1,8 @@
+# BuildKit reads this file for agent/Dockerfile; paths are relative to the
+# repository root, the build context.
+*
+!agent/
+!fixtures/
+agent/bin/
+agent/dist/
+agent/Dockerfile*
