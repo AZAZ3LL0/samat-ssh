@@ -12,25 +12,18 @@ import (
 
 // Server implements gen.StrictServerInterface.
 type Server struct {
-	info    gen.AgentInfo
-	auth    *auth.Service
-	limiter *auth.Limiter
+	info        gen.AgentInfo
+	auth        *auth.Service
+	limiter     *auth.Limiter
+	hostMetrics HostMetricsSource
 }
 
 var _ gen.StrictServerInterface = (*Server)(nil)
 
-// New returns a Server answering GET /v1/info with info.
-func New(info gen.AgentInfo, service *auth.Service, limiter *auth.Limiter) *Server {
-	return &Server{info: info, auth: service, limiter: limiter}
-}
-
-// GetMetricsHost is not served until the host collector exists.
-func (s *Server) GetMetricsHost(ctx context.Context, _ gen.GetMetricsHostRequestObject) (gen.GetMetricsHostResponseObject, error) {
-	return gen.GetMetricsHostdefaultJSONResponse{
-		Body:       middleware.NewError(ctx, gen.Unsupported, "host metrics are not available in this agent build"),
-		Headers:    errorHeaders(ctx),
-		StatusCode: http.StatusNotImplemented,
-	}, nil
+// New returns a Server answering GET /v1/info with info. A nil hostMetrics
+// means the host cannot be measured, and GET /v1/metrics/host says so.
+func New(info gen.AgentInfo, service *auth.Service, limiter *auth.Limiter, hostMetrics HostMetricsSource) *Server {
+	return &Server{info: info, auth: service, limiter: limiter, hostMetrics: hostMetrics}
 }
 
 // ConnectWebSocket exists to satisfy the generated interface: the router
