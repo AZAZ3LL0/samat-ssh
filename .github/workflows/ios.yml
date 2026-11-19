@@ -7,7 +7,8 @@ on:
 
 concurrency:
   group: ios-${{ github.ref }}
-  cancel-in-progress: true
+  # A cancelled main run could stop a TestFlight upload halfway.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
@@ -31,3 +32,32 @@ jobs:
           test -n "$udid" || { xcrun simctl list devices available; echo "no iPhone simulator found"; exit 1; }
           echo "IOS_DESTINATION=platform=iOS Simulator,id=$udid" >> "$GITHUB_ENV"
       - run: make ios-test IOS_DESTINATION="$IOS_DESTINATION"
+
+  # Every push to main goes to TestFlight. Skipped until the repository variable
+  # ASC_KEY_ID is set; ios/fastlane/Fastfile describes the key.
+  testflight:
+    if: github.ref == 'refs/heads/main' && vars.ASC_KEY_ID != ''
+    needs: test
+    runs-on: macos-15
+    concurrency:
+      group: testflight
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26
+        run: |
+          xcode="$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -n 1)"
+          sudo xcode-select -s "$xcode"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+          working-directory: ios
+      - run: make ios-testflight
+        env:
+          LC_ALL: en_US.UTF-8
+          LANG: en_US.UTF-8
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
