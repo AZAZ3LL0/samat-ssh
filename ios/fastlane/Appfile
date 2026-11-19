@@ -1,0 +1,2 @@
+app_identifier("dev.azaz3ll0.pulse")
+team_id(ENV["APPLE_TEAM_ID"])

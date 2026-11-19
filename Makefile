@@ -10,7 +10,7 @@ IOS_DESTINATION ?= platform=iOS Simulator,name=$(IOS_SIMULATOR)
 BASE ?= origin/main
 
 .PHONY: help generate generate-go generate-swift check-generate check-contract validate-fixtures \
-	lint lint-go lint-swift test agent-test agent-run agent-it ios-test ios-demo ios-project hooks
+	lint lint-go lint-swift test agent-test agent-run agent-it ios-test ios-demo ios-testflight ios-project hooks
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-18s %s\n", $$1, $$2}'
@@ -72,6 +72,9 @@ ios-demo: ## build and run the app in the simulator with -PulseDemo YES: seed da
 	open -a Simulator
 	xcrun simctl install booted .build/ios-demo/Build/Products/Debug-iphonesimulator/Pulse.app
 	xcrun simctl launch --terminate-running-process booted dev.azaz3ll0.pulse -PulseDemo YES
+
+ios-testflight: ## archive a Release build and upload it to TestFlight; ios/fastlane/Fastfile lists the env
+	cd ios && bundle exec fastlane beta
 
 ios-project: ## regenerate ios/Pulse.xcodeproj from ios/project.yml (needs xcodegen)
 	cd ios && xcodegen generate --spec project.yml
