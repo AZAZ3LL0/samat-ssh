@@ -15,6 +15,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/apitime"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/ws"
 )
@@ -129,8 +130,8 @@ func (c *client) readAny(timeout time.Duration) (message, error) {
 	if !msg.Type.Valid() {
 		c.t.Errorf("server sent unknown message type %q", msg.Type)
 	}
-	if _, err := time.Parse(time.RFC3339, msg.Ts); err != nil || !strings.HasSuffix(msg.Ts, "Z") {
-		c.t.Errorf("ts %q is not RFC 3339 UTC", msg.Ts)
+	if _, err := time.Parse(apitime.Layout, msg.Ts); err != nil {
+		c.t.Errorf("ts %q is not RFC 3339 UTC with milliseconds", msg.Ts)
 	}
 	return msg, nil
 }

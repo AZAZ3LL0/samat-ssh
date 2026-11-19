@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -50,7 +51,8 @@ func TestMain(m *testing.M) {
 }
 
 func runSuite(m *testing.M) (int, error) {
-	if _, err := docker("build", "--tag", image, ".."); err != nil {
+	// The image carries fixtures/, so the context is the repository root.
+	if _, err := docker("build", "--tag", image, "--file", "../Dockerfile", "../.."); err != nil {
 		return 0, err
 	}
 	id, err := docker("run", "--detach", "--rm", "--publish", "127.0.0.1::7443", image)
@@ -341,5 +343,72 @@ func TestRevokedTokenLosesAccess(t *testing.T) {
 	decodeBody(t, response, http.StatusUnauthorized, &body)
 	if body.Code != gen.Unauthorized {
 		t.Errorf("error code = %q, want unauthorized", body.Code)
+	}
+}
+
+func TestHostMetricsSnapshotAndStream(t *testing.T) {
+	client, token, _ := device(t)
+
+	response, err := client.Get("https://" + agent.addr + "/v1/info")
+	if err != nil {
+		t.Fatalf("GET /v1/info: %v", err)
+	}
+	var info gen.AgentInfo
+	decodeBody(t, response, http.StatusOK, &info)
+	if !slices.Contains(info.Features, gen.AgentFeatureHostMetrics) {
+		t.Errorf("features = %v, want host_metrics", info.Features)
+	}
+
+	request, err := http.NewRequest(http.MethodGet, "https://"+agent.addr+"/v1/metrics/host", nil)
+	if err != nil {
+		t.Fatalf("build request: %v", err)
+	}
+	request.Header.Set("Authorization", "Bearer "+token)
+	response, err = client.Do(request)
+	if err != nil {
+		t.Fatalf("GET /v1/metrics/host: %v", err)
+	}
+	var snapshot gen.HostMetrics
+	decodeBody(t, response, http.StatusOK, &snapshot)
+	if snapshot.Cpu.Cores == 0 || snapshot.Memory.TotalBytes == 0 {
+		t.Errorf("snapshot = %+v, want the fixture data", snapshot)
+	}
+	if age := time.Since(snapshot.Ts.Time); age < -time.Minute || age > time.Minute {
+		t.Errorf("snapshot ts = %s, want about now", snapshot.Ts)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	socket, _, err := dial(ctx, client, token)
+	if err != nil {
+		t.Fatalf("upgrade: %v", err)
+	}
+	defer func() { _ = socket.CloseNow() }()
+	err = socket.Write(ctx, websocket.MessageText,
+		[]byte(`{"type":"subscribe","ts":"2026-11-15T10:00:00.000Z","topic":"metrics.host","payload":{"requestId":"r1"}}`))
+	if err != nil {
+		t.Fatalf("subscribe: %v", err)
+	}
+	if ack := readMessage(ctx, t, socket); ack.Type != gen.WsMessageTypeSubscribed {
+		t.Fatalf("subscribe answered %s %s", ack.Type, ack.Payload)
+	}
+	var stamps []time.Time
+	for len(stamps) < 3 {
+		msg := readMessage(ctx, t, socket)
+		if msg.Type != gen.WsMessageTypeEvent {
+			continue
+		}
+		if msg.Seq == nil || *msg.Seq != int64(len(stamps)+1) {
+			t.Errorf("event seq = %v, want %d", msg.Seq, len(stamps)+1)
+		}
+		var m gen.HostMetrics
+		if err := json.Unmarshal(msg.Payload, &m); err != nil {
+			t.Fatalf("event payload %s: %v", msg.Payload, err)
+		}
+		stamps = append(stamps, m.Ts.Time)
+	}
+	// The collector ticks every second.
+	if gap := stamps[2].Sub(stamps[0]); gap < 1500*time.Millisecond || gap > 3*time.Second {
+		t.Errorf("three events span %s, want about 2 seconds", gap)
 	}
 }

@@ -14,9 +14,13 @@ import (
 	"time"
 
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/handlers"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/middleware"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/auth"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/collect/host"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/fake"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/ws"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/ws/topics"
 )
 
 // version is the agent semver, set at release time with -ldflags "-X main.version=...".
@@ -56,12 +60,25 @@ func serve(ctx context.Context, e env, listener net.Listener, logger *slog.Logge
 		return err
 	}
 	hub := ws.NewHub(ws.DefaultConfig(), time.Now, logger)
+	sampler, err := hostSampler(ctx, e, logger)
+	if err != nil {
+		return err
+	}
+	// A nil interface, not a typed nil, tells the API the feature is absent.
+	var hostMetrics handlers.HostMetricsSource
+	if sampler != nil {
+		topics.RegisterMetricsHost(hub)
+		collector := host.NewCollector(sampler, hub, topics.MetricsHost, host.Interval, logger)
+		go collector.Run(ctx)
+		hostMetrics = collector
+	}
 	handler, err := api.NewHandler(api.Deps{
 		AgentVersion: version,
 		Hostname:     hostname,
 		Auth:         e.auth,
 		Limiter:      auth.NewLimiter(time.Now),
 		Hub:          hub,
+		HostMetrics:  hostMetrics,
 		Logger:       logger,
 	})
 	if err != nil {
@@ -94,6 +111,25 @@ func serve(ctx context.Context, e env, listener net.Listener, logger *slog.Logge
 		return fmt.Errorf("serve: %w", err)
 	}
 	return nil
+}
+
+// hostSampler picks the source of host metrics: the fixtures in fake mode,
+// /proc otherwise. Without a readable /proc (not Linux) it returns nil, and the
+// agent runs without the host_metrics feature instead of failing to start.
+func hostSampler(ctx context.Context, e env, logger *slog.Logger) (host.Sampler, error) {
+	if e.fake {
+		sampler, err := fake.NewHostSampler(os.DirFS(e.fixtures), time.Now)
+		if err != nil {
+			return nil, fmt.Errorf("load fixtures from %s: %w", e.fixtures, err)
+		}
+		return sampler, nil
+	}
+	sampler := host.NewProcSampler(os.DirFS("/proc"), time.Now)
+	if _, err := sampler.Sample(ctx); err != nil {
+		logger.Warn("host metrics unavailable", "error", err)
+		return nil, nil
+	}
+	return sampler, nil
 }
 
 // purgeLoop drops idempotency records past their 24-hour life.

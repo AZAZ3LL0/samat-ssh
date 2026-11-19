@@ -30,7 +30,9 @@ type Deps struct {
 	Auth         *auth.Service
 	Limiter      *auth.Limiter
 	Hub          *ws.Hub
-	Logger       *slog.Logger
+	// HostMetrics serves GET /v1/metrics/host; nil when the host cannot be measured.
+	HostMetrics handlers.HostMetricsSource
+	Logger      *slog.Logger
 }
 
 // NewHandler returns the handler serving every /v1 endpoint.
@@ -44,14 +46,17 @@ func NewHandler(deps Deps) (http.Handler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("contract version %q is not an integer: %w", spec.Info.Version, err)
 	}
+	// An empty list still has to serialize as [], not null.
+	features := []gen.AgentFeature{}
+	if deps.HostMetrics != nil {
+		features = append(features, gen.AgentFeatureHostMetrics)
+	}
 	info := gen.AgentInfo{
 		AgentVersion:        deps.AgentVersion,
 		ApiVersion:          apiVersion,
 		MinClientApiVersion: minClientAPIVersion,
 		Hostname:            deps.Hostname,
-		// Features appear as their collectors land; an empty list still has to
-		// serialize as [], not null.
-		Features: []gen.AgentFeature{},
+		Features:            features,
 	}
 
 	badRequest := func(w http.ResponseWriter, r *http.Request, _ error) {
@@ -73,7 +78,7 @@ func NewHandler(deps Deps) (http.Handler, error) {
 		}
 	}
 	strict := gen.NewStrictHandlerWithOptions(
-		handlers.New(info, deps.Auth, deps.Limiter),
+		handlers.New(info, deps.Auth, deps.Limiter, deps.HostMetrics),
 		[]gen.StrictMiddlewareFunc{upgrade},
 		gen.StrictHTTPServerOptions{
 			RequestErrorHandlerFunc: badRequest,

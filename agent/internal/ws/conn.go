@@ -11,6 +11,7 @@ import (
 	"github.com/coder/websocket"
 	"github.com/oapi-codegen/nullable"
 
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/apitime"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 )
 
@@ -134,7 +135,7 @@ func (c *conn) take() (envelopes []gen.WsEnvelope, overflow bool) {
 func (c *conn) envelope(kind gen.WsMessageType, topic *string, seq *int64, payload any) gen.WsEnvelope {
 	envelope := gen.WsEnvelope{
 		Type:    kind,
-		Ts:      c.hub.now().UTC().Truncate(time.Millisecond),
+		Ts:      apitime.New(c.hub.now()),
 		Payload: payload,
 	}
 	if topic != nil {
