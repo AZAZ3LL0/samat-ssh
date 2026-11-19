@@ -1,0 +1,114 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ of %@" : {
+      "comment" : "Memory used of total, e.g. 5.1 GB of 8 GB",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ из %2$@"
+          }
+        }
+      }
+    },
+    "%lld cores" : {
+      "comment" : "CPU core count under the gauge",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld core"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld cores"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ядро"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ядра"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ядер"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ядра"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "CPU" : {
+      "comment" : "Gauge title",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ЦП"
+          }
+        }
+      }
+    },
+    "CPU, last minute" : {
+      "comment" : "Sparkline title",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ЦП за минуту"
+          }
+        }
+      }
+    },
+    "Memory" : {
+      "comment" : "Gauge title",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Память"
+          }
+        }
+      }
+    },
+    "Memory, last minute" : {
+      "comment" : "Sparkline title",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Память за минуту"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
