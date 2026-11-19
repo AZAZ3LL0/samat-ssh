@@ -12,7 +12,7 @@ BASE ?= origin/main
 AGENT_VERSION ?= $(patsubst agent/%,%,$(shell git describe --tags --match 'agent/v*' --abbrev=0 2>/dev/null || echo agent/v0.0.0))
 
 .PHONY: help generate generate-go generate-swift check-generate check-contract validate-fixtures \
-	lint lint-go lint-swift test agent-test agent-run agent-it agent-dist ios-test ios-demo ios-project hooks
+	lint lint-go lint-swift lint-sh test agent-test agent-run agent-it agent-dist ios-test ios-demo ios-project hooks
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-18s %s\n", $$1, $$2}'
@@ -39,10 +39,13 @@ check-contract: ## fail on a contract change without a version bump
 validate-fixtures: ## check fixtures/ against the contract schemas
 	cd agent && go test -count=1 -run '^TestFixtures' ./internal/api/contracttest/
 
-lint: lint-go lint-swift ## run all linters
+lint: lint-go lint-swift lint-sh ## run all linters
 
 lint-go:
 	cd agent && golangci-lint run ./...
+
+lint-sh:
+	shellcheck deploy/*.sh
 
 lint-swift:
 	swiftlint lint --strict --quiet
