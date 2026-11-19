@@ -12,7 +12,7 @@ BASE ?= origin/main
 AGENT_VERSION ?= $(patsubst agent/%,%,$(shell git describe --tags --match 'agent/v*' --abbrev=0 2>/dev/null || echo agent/v0.0.0))
 
 .PHONY: help generate generate-go generate-swift check-generate check-contract validate-fixtures \
-	lint lint-go lint-swift lint-sh test agent-test agent-run agent-it agent-dist ios-test ios-demo ios-project hooks
+	lint lint-go lint-swift lint-sh test agent-test agent-run agent-it agent-dist ios-test ios-vps-check ios-demo ios-project hooks
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-18s %s\n", $$1, $$2}'
@@ -72,6 +72,16 @@ ios-test: ## test the iOS packages, then the app and its UI in demo mode
 		xcodebuild test -scheme "$$scheme" -destination '$(IOS_DESTINATION)' -skipPackagePluginValidation
 	xcodebuild test -project ios/Pulse.xcodeproj -scheme Pulse -destination '$(IOS_DESTINATION)' \
 		-skipPackagePluginValidation
+
+ios-vps-check: ## AgentKit pinning and token tests against a live agent; run via deploy/vps/check.sh
+	@test -n "$$PULSE_VPS_URL" -a -n "$$PULSE_VPS_PIN" -a -n "$$PULSE_VPS_TOKEN" || \
+		{ echo 'set PULSE_VPS_URL, PULSE_VPS_PIN and PULSE_VPS_TOKEN'; exit 1; }
+	@# xcodebuild passes TEST_RUNNER_* variables to the tests without the prefix.
+	cd ios/Packages && scheme="$$(xcodebuild -list -json | ../../scripts/first-scheme.py)" && \
+		TEST_RUNNER_PULSE_VPS_URL="$$PULSE_VPS_URL" TEST_RUNNER_PULSE_VPS_PIN="$$PULSE_VPS_PIN" \
+		TEST_RUNNER_PULSE_VPS_TOKEN="$$PULSE_VPS_TOKEN" \
+		xcodebuild test -scheme "$$scheme" -destination '$(IOS_DESTINATION)' -skipPackagePluginValidation \
+			-only-testing:AgentKitTests/LiveAgentTests
 
 ios-demo: ## build and run the app in the simulator with -PulseDemo YES: seed data, no network
 	xcodebuild build -project ios/Pulse.xcodeproj -scheme Pulse -destination '$(IOS_DESTINATION)' \
