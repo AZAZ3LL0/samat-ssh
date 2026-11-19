@@ -45,7 +45,7 @@ lint-go:
 	cd agent && golangci-lint run ./...
 
 lint-sh:
-	shellcheck deploy/*.sh
+	shellcheck deploy/*.sh deploy/vps/*.sh
 
 lint-swift:
 	swiftlint lint --strict --quiet

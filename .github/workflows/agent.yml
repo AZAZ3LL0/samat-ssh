@@ -8,7 +8,8 @@ on:
 
 concurrency:
   group: agent-${{ github.ref }}
-  cancel-in-progress: true
+  # A cancelled main run could stop a deploy halfway or leave a pairing token behind.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
@@ -61,3 +62,63 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/checksums.txt \
             --title "pulse-agent $GORELEASER_CURRENT_TAG" --generate-notes
+
+  # Every push to main ships to the test VPS. Skipped until the repository
+  # variable VPS_HOST is set; deploy/vps/README.md lists what the jobs need.
+  deploy-vps:
+    if: github.ref == 'refs/heads/main' && vars.VPS_HOST != ''
+    needs: [test, integration]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: test-vps
+      cancel-in-progress: false
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_SSH_USER: ${{ vars.VPS_SSH_USER }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # agent-dist versions the snapshot from the latest agent/v tag.
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: agent/go.mod
+          cache-dependency-path: agent/go.sum
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          install-only: true
+      - run: make agent-dist
+      - run: deploy/vps/ssh-setup.sh
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+      - run: deploy/vps/deploy.sh "https://$VPS_HOST:7443"
+
+  # The app's side of the deploy: SPKI pinning and the device token against the
+  # real agent, with LiveAgentClient on a simulator.
+  check-vps:
+    needs: deploy-vps
+    runs-on: macos-15
+    concurrency:
+      group: test-vps-check
+      cancel-in-progress: false
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_SSH_USER: ${{ vars.VPS_SSH_USER }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26
+        run: |
+          xcode="$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -n 1)"
+          sudo xcode-select -s "$xcode"
+      - name: Pick a simulator
+        run: |
+          udid="$(xcrun simctl list devices available | sed -nE 's/^ +iPhone[^(]*\(([0-9A-F-]{36})\).*/\1/p' | head -n 1)"
+          test -n "$udid" || { xcrun simctl list devices available; echo "no iPhone simulator found"; exit 1; }
+          echo "IOS_DESTINATION=platform=iOS Simulator,id=$udid" >> "$GITHUB_ENV"
+      - run: deploy/vps/ssh-setup.sh
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+      - run: deploy/vps/check.sh "https://$VPS_HOST:7443"
