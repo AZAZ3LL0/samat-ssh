@@ -8,9 +8,11 @@ IOS_SIMULATOR ?= iPhone 16
 IOS_DESTINATION ?= platform=iOS Simulator,name=$(IOS_SIMULATOR)
 # Base ref for contract checks; CI passes the PR base.
 BASE ?= origin/main
+# Latest agent release without the agent/ tag prefix, which goreleaser cannot parse.
+AGENT_VERSION ?= $(patsubst agent/%,%,$(shell git describe --tags --match 'agent/v*' --abbrev=0 2>/dev/null || echo agent/v0.0.0))
 
 .PHONY: help generate generate-go generate-swift check-generate check-contract validate-fixtures \
-	lint lint-go lint-swift test agent-test agent-run agent-it ios-test ios-demo ios-project hooks
+	lint lint-go lint-swift test agent-test agent-run agent-it agent-dist ios-test ios-demo ios-project hooks
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "%-18s %s\n", $$1, $$2}'
@@ -56,6 +58,9 @@ agent-run: ## run the agent in fake mode: no root, Docker or systemd needed
 
 agent-it: ## build the agent image and run the API tests against a container
 	cd agent && go test -tags integration -count=1 ./integration/...
+
+agent-dist: ## build agent release archives of HEAD into dist/ (needs goreleaser)
+	GORELEASER_CURRENT_TAG=$(AGENT_VERSION) goreleaser release --snapshot --clean --config deploy/goreleaser.yaml
 
 ios-test: ## test the iOS packages, then the app and its UI in demo mode
 	@# Package tests run from the package's aggregate scheme; Xcode versions name it
