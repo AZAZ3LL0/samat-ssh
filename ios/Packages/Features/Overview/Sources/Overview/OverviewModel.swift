@@ -87,19 +87,24 @@ public struct OverviewSnapshot: Sendable, Equatable {
         streamError = nil
         if case .failed = state { state = .loading }
 
+        // stop() and retry() cancel this task on the main actor, but an await already in
+        // flight still resumes it; every resumption checks before it touches the state.
         do throws(AgentError) {
             let snapshot = try await client.hostMetrics()
+            guard !Task.isCancelled else { return }
             // The snapshot paints the screen; the history holds live samples only, so a
             // sparkline never shows the same sample twice.
             state = .loaded(OverviewSnapshot(snapshot))
             receivedAt = .now
         } catch {
-            fail(error)
+            if !Task.isCancelled { fail(error) }
             return
         }
 
         do {
             for try await event in client.subscribe(.metricsHost) {
+                // A cancelled iteration still hands out an event that was already buffered.
+                guard !Task.isCancelled else { return }
                 apply(OverviewSnapshot(event.payload))
             }
         } catch {
