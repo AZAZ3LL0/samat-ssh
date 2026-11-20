@@ -1,0 +1,42 @@
+# Agent release archives. Run from the repository root:
+#   make agent-dist                          snapshot of HEAD into dist/
+#   CI on tag agent/vX.Y.Z                   the release, published by gh
+# Tags carry the agent/ prefix, which goreleaser OSS cannot parse, so the
+# caller passes the bare version in GORELEASER_CURRENT_TAG.
+version: 2
+
+project_name: pulse-agent
+
+builds:
+  - id: pulse-agent
+    dir: agent
+    main: ./cmd/pulse-agent
+    binary: pulse-agent
+    env:
+      - CGO_ENABLED=0
+    goos: [linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - src: deploy/pulse-agent.service
+        strip_parent: true
+      - src: agent/config.example.yaml
+        strip_parent: true
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev.{{ .ShortCommit }}"
+
+changelog:
+  disable: true
+
+release:
+  disable: true

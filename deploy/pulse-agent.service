@@ -1,0 +1,24 @@
+[Unit]
+Description=Pulse agent: monitoring API for the Pulse iOS app
+Documentation=https://github.com/AZAZ3LL0/samat-ssh
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/pulse-agent --config /etc/pulse-agent/config.yaml serve
+Restart=on-failure
+RestartSec=5s
+
+# v1 runs as root to read every cgroup and talk to Docker and systemd;
+# the hardening below limits what root can change (tech.md 4.2).
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+StateDirectory=pulse-agent
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/pulse-agent
+
+[Install]
+WantedBy=multi-user.target
