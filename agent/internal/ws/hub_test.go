@@ -256,11 +256,16 @@ func TestRepeatedSubscribeIsNoOp(t *testing.T) {
 	// Same parameters in another key order are the same subscription.
 	c.subscribe(topicFiles, "r2", map[string]any{"since": "x", "path": "/var/log/a"})
 
-	hub.Publish(topicFiles, "line")
-	c.send(gen.WsMessageTypeEcho, ws.TopicDebugEcho, "marker")
-	first, second := c.read(), c.read()
-	if first.Type != gen.WsMessageTypeEvent || second.Type != gen.WsMessageTypeEcho {
-		t.Fatalf("got %s then %s, want exactly one event before the marker", first.Type, second.Type)
+	// An echo cannot mark the end of the events: replies overtake queued events.
+	// A duplicate subscription would get its copy of "first" in the same batch as
+	// the original, so the event after it must already be "second".
+	hub.Publish(topicFiles, "first")
+	if msg := c.read(); msg.Type != gen.WsMessageTypeEvent || string(msg.Payload) != `"first"` {
+		t.Fatalf("got %s %s, want the first event", msg.Type, msg.Payload)
+	}
+	hub.Publish(topicFiles, "second")
+	if msg := c.read(); msg.Type != gen.WsMessageTypeEvent || string(msg.Payload) != `"second"` {
+		t.Fatalf("got %s %s, want the second event and no duplicate of the first", msg.Type, msg.Payload)
 	}
 }
 

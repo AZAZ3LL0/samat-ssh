@@ -16,3 +16,8 @@ dist/
 DerivedData/
 xcuserdata/
 *.xcuserstate
+
+# fastlane
+ios/fastlane/README.md
+ios/fastlane/report.xml
+ios/vendor/
