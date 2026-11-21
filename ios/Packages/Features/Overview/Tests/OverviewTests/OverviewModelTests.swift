@@ -216,9 +216,11 @@ private final class FlakyClient: AgentClient, @unchecked Sendable {  // guarded 
     }
 }
 
-/// Polls `condition` on the main actor until it holds, failing after `timeout`.
+/// Polls `condition` on the main actor until it holds, failing after `timeout`. The bound
+/// only catches a hang: a CI runner under load has run these tests 50 times slower than
+/// a laptop, and a passing condition returns as soon as it holds.
 @MainActor private func until(
-    timeout: Duration = .seconds(5),
+    timeout: Duration = .seconds(60),
     _ condition: () -> Bool,
     sourceLocation: SourceLocation = #_sourceLocation
 ) async throws {
