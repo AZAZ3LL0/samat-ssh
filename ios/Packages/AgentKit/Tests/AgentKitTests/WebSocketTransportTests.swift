@@ -9,7 +9,9 @@ import os
     private let connector = ScriptedConnector()
     private let fast = Backoff(initial: .milliseconds(1), maximum: .milliseconds(5), jitter: 0)
 
-    private func transport(idleTimeout: Duration = .seconds(45)) -> WebSocketTransport {
+    /// The scripted agent stays silent between steps, and a starved CI runner can stretch
+    /// that past the real 45 s idle timeout; only the idle test sets a short one.
+    private func transport(idleTimeout: Duration = .seconds(3600)) -> WebSocketTransport {
         WebSocketTransport(connector: connector, backoff: fast, idleTimeout: idleTimeout, random: { 0 })
     }
 
@@ -212,7 +214,12 @@ final class FakeSocket: WebSocketConnection {
 
     func close() {
         closed.withLock { $0 = true }
-        Task { await inbox.close(.unreachable) }
+        // Closing the outbox too fails a test still waiting on this socket instead of
+        // hanging it until the suite's time limit; messages sent before stay readable.
+        Task {
+            await inbox.close(.unreachable)
+            await outbox.close(.unreachable)
+        }
     }
 
     func push(_ message: AgentMessage) async {
@@ -299,8 +306,11 @@ actor Mailbox<Value: Sendable> {
     }
 }
 
-func eventually(_ condition: () -> Bool) async throws {
-    for _ in 0..<200 where !condition() {
+/// A wall-clock deadline rather than a count of sleeps: on a starved runner each sleep
+/// overshoots, and a passing condition returns at once anyway.
+func eventually(timeout: Duration = .seconds(30), _ condition: () -> Bool) async throws {
+    let deadline = ContinuousClock.now + timeout
+    while !condition(), ContinuousClock.now < deadline {
         try await Task.sleep(for: .milliseconds(10))
     }
     #expect(condition())
