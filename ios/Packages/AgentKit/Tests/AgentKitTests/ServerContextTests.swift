@@ -12,6 +12,8 @@ private struct InfoClient: AgentClient {
 
     func hostMetrics() async throws(AgentError) -> HostMetrics { throw .unreachable }
 
+    func pair(code: String, deviceName: String) async throws(AgentError) -> PairResponse { throw .unreachable }
+
     func subscribe<T: Decodable & Sendable>(_ topic: WsTopic<T>) -> AsyncThrowingStream<WsEvent<T>, any Error> {
         AsyncThrowingStream { $0.finish(throwing: AgentError.unreachable) }
     }

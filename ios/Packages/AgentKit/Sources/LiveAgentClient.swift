@@ -15,8 +15,13 @@ public final class LiveAgentClient: AgentClient {
     ///   - baseURL: `https://<host>:<port>`, without the `/v1` prefix.
     ///   - pin: the SPKI fingerprint from pairing.
     ///   - token: the device token; `nil` before pairing, when only public endpoints answer.
-    public init(baseURL: URL, pin: String, token: String?) {
-        let delegate = PinningDelegate(pin: pin)
+    public convenience init(baseURL: URL, pin: String, token: String?) {
+        self.init(baseURL: baseURL, trustedPin: pin, token: token)
+    }
+
+    /// - Parameter trustedPin: `nil` trusts any agent key and records it; only `probe` passes `nil`.
+    private init(baseURL: URL, trustedPin: String?, token: String?) {
+        let delegate = PinningDelegate(pin: trustedPin)
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 15
         let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
@@ -58,6 +63,25 @@ public final class LiveAgentClient: AgentClient {
         case .default(let status, let response):
             throw AgentError(status: status, body: try? response.body.json)
         }
+    }
+
+    public func pair(code: String, deviceName: String) async throws(AgentError) -> PairResponse {
+        let body = Components.Schemas.PairRequest(code: code, deviceName: deviceName)
+        switch try await call({ try await self.client.pair(body: .json(body)) }) {
+        case .ok(let response):
+            return try decodeBody { try response.body.json }
+        case .default(let status, let response):
+            throw AgentError(status: status, body: try? response.body.json)
+        }
+    }
+
+    /// Reads `GET /v1/info` from an agent whose key is not known yet and returns the key it
+    /// presented. Nothing else trusts that key until the user confirms it matches `pulse-agent pair`.
+    public static func probe(baseURL: URL) async throws(AgentError) -> AgentProbe {
+        let client = LiveAgentClient(baseURL: baseURL, trustedPin: nil, token: nil)
+        let info = try await client.info()
+        guard let fingerprint = client.delegate.presentedFingerprint else { throw .pinMismatch }
+        return AgentProbe(info: info, fingerprint: fingerprint)
     }
 
     public func subscribe<T: Decodable & Sendable>(

@@ -19,6 +19,8 @@ public struct FakeAgentClient: AgentClient {
     /// Topics in `x-ws-topics` of `api/openapi.yaml`. A test keeps the two in sync.
     static let contractTopics: Set<String> = ["debug.echo", "metrics.host"]
     static let slowDelay: Duration = .seconds(2)
+    /// The only code the fake accepts; any other fails like an unknown, expired or used code.
+    public static let pairingCode = "DEMO2345"
 
     private let mode: Mode
     private let interval: Duration
@@ -35,6 +37,16 @@ public struct FakeAgentClient: AgentClient {
 
     public func hostMetrics() async throws(AgentError) -> HostMetrics {
         try await respond { () throws(AgentError) in try Self.load(Self.paths("host_metrics")[0]) }
+    }
+
+    public func pair(code: String, deviceName: String) async throws(AgentError) -> PairResponse {
+        try await respond { () throws(AgentError) in
+            // The agent forgives case and surrounding spaces of a hand-typed code.
+            guard code.trimmingCharacters(in: .whitespaces).uppercased() == Self.pairingCode else {
+                throw .unauthorized
+            }
+            return try Self.load("pair_response/demo.json")
+        }
     }
 
     public func subscribe<T: Decodable & Sendable>(
