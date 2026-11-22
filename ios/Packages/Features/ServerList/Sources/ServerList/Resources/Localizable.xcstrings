@@ -21,12 +21,32 @@
         }
       }
     },
+    "Address" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адрес"
+          }
+        }
+      }
+    },
     "Agent version" : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Версия агента"
+          }
+        }
+      }
+    },
+    "Allow camera access for Pulse in Settings, or enter the address by hand." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешите Pulse доступ к камере в Настройках или введите адрес вручную."
           }
         }
       }
@@ -101,6 +121,16 @@
         }
       }
     },
+    "No access to the camera" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет доступа к камере"
+          }
+        }
+      }
+    },
     "Pair" : {
       "localizations" : {
         "ru" : {
@@ -137,6 +167,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выполните на сервере sudo pulse-agent pair. Продолжайте, только если fingerprint совпадает полностью."
+          }
+        }
+      }
+    },
+    "Scan QR code" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сканировать QR-код"
           }
         }
       }
@@ -187,6 +227,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отличаются"
+          }
+        }
+      }
+    },
+    "This is not a pairing link from pulse-agent pair." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это не ссылка привязки из pulse-agent pair."
           }
         }
       }

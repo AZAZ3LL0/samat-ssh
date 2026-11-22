@@ -11,7 +11,8 @@ struct ServerListView: View {
     @Query private var records: [ServerRecord]
     @Query private var settings: [AppSettings]
     @State private var selection: ServerEntry.ID?
-    @State private var isAddingServer = false
+    /// The open add sheet; `item:` hands it the link, which `isPresented:` would capture stale.
+    @State private var addRequest: AddServerRequest?
 
     private var entries: [ServerEntry] {
         ServerDirectory.entries(records: records, demoEnabled: environment.isDemoEnabled(settings: settings.first))
@@ -38,17 +39,15 @@ struct ServerListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(String(localized: "Add server"), systemImage: "plus") { isAddingServer = true }
+                    Button(String(localized: "Add server"), systemImage: "plus") {
+                        addRequest = AddServerRequest(link: nil)
+                    }
                 }
                 #if DEBUG
                     ToolbarItem(placement: .topBarTrailing) { DebugMenu() }
                 #endif
             }
-            .sheet(isPresented: $isAddingServer) {
-                AddServerView(model: environment.makeAddServerModel(deviceName: UIDevice.current.name)) { id in
-                    selection = id
-                }
-            }
+            .sheet(item: $addRequest, content: addServerSheet)
         } detail: {
             if let entry = entries.first(where: { $0.id == selection }) {
                 NavigationStack {
@@ -62,12 +61,29 @@ struct ServerListView: View {
         .onAppear {
             selection = settings.first?.lastSelectedServerId
         }
+        .onOpenURL { url in
+            addRequest = AddServerRequest(link: url)
+        }
         .onChange(of: selection) { _, id in
             try? AppSettings.current(in: modelContext).lastSelectedServerId = id
+        }
+    }
+
+    private func addServerSheet(_ request: AddServerRequest) -> some View {
+        AddServerView(
+            model: environment.makeAddServerModel(deviceName: UIDevice.current.name), link: request.link
+        ) { id in
+            selection = id
         }
     }
 
     private func enableDemo() {
         try? AppSettings.current(in: modelContext).demoModeEnabled = true
     }
+}
+
+/// What opened the add sheet: the + button, or a `pulse://pair` link from a QR code or another app.
+private struct AddServerRequest: Identifiable {
+    let id = UUID()
+    let link: URL?
 }
