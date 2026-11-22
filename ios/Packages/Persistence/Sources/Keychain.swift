@@ -13,6 +13,10 @@ public struct KeychainAccount: Hashable, Sendable {
     public static func spki(_ serverId: UUID) -> Self { Self(rawValue: "spki.\(serverId.uuidString)") }
     /// Ed25519 private key generated in the app for SSH.
     public static func sshKey(_ serverId: UUID) -> Self { Self(rawValue: "ssh.key.\(serverId.uuidString)") }
+    /// The SSH host key the user confirmed, as an OpenSSH public key line (docs/adr/0001).
+    public static func sshHostKey(_ serverId: UUID) -> Self {
+        Self(rawValue: "ssh.hostkey.\(serverId.uuidString)")
+    }
 }
 
 public enum KeychainError: Error, Equatable, Sendable {
