@@ -10,6 +10,31 @@ public import Foundation
 extension Components {
     /// Types generated from the `#/components/responses` section of the OpenAPI document.
     public enum Responses {
+        public struct NoContent: Sendable, Hashable {
+            /// - Remark: Generated from `#/components/responses/NoContent/headers`.
+            public struct Headers: Sendable, Hashable {
+                /// Request identifier, present on every response.
+                ///
+                /// - Remark: Generated from `#/components/responses/NoContent/headers/X-Request-Id`.
+                public var xRequestId: Components.Headers.XRequestId
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - xRequestId: Request identifier, present on every response.
+                public init(xRequestId: Components.Headers.XRequestId) {
+                    self.xRequestId = xRequestId
+                }
+            }
+            /// Received HTTP response headers
+            public var headers: Components.Responses.NoContent.Headers
+            /// Creates a new `NoContent`.
+            ///
+            /// - Parameters:
+            ///   - headers: Received HTTP response headers
+            public init(headers: Components.Responses.NoContent.Headers) {
+                self.headers = headers
+            }
+        }
         public struct _Error: Sendable, Hashable {
             /// - Remark: Generated from `#/components/responses/Error/headers`.
             public struct Headers: Sendable, Hashable {

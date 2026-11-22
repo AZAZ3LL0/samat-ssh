@@ -127,8 +127,12 @@ func TestPairDeviceConsumesCodeOnce(t *testing.T) {
 		t.Fatalf("first pairing: %v", err)
 	}
 	err := st.PairDevice(ctx, code, "t2", "iPad", []byte("hash-2"), now)
-	if !errors.Is(err, ErrPairingCodeInvalid) {
-		t.Fatalf("second pairing error = %v, want ErrPairingCodeInvalid", err)
+	if !errors.Is(err, ErrPairingCodeUsed) || !errors.Is(err, ErrPairingCodeInvalid) {
+		t.Fatalf("second pairing error = %v, want ErrPairingCodeUsed", err)
+	}
+	// Used wins over expired: the code did its job before it ran out.
+	if err := st.PairDevice(ctx, code, "t2", "iPad", []byte("hash-2"), now.Add(time.Hour)); !errors.Is(err, ErrPairingCodeUsed) {
+		t.Fatalf("used and expired code error = %v, want ErrPairingCodeUsed", err)
 	}
 	tokens, err := st.ListTokens(ctx)
 	if err != nil {
@@ -149,11 +153,13 @@ func TestPairDeviceRejectsExpiredAndUnknownCode(t *testing.T) {
 	}
 
 	atExpiry := now.Add(10 * time.Minute)
-	if err := st.PairDevice(ctx, code, "t1", "iPhone", []byte("hash-1"), atExpiry); !errors.Is(err, ErrPairingCodeInvalid) {
-		t.Errorf("expired code error = %v, want ErrPairingCodeInvalid", err)
+	err := st.PairDevice(ctx, code, "t1", "iPhone", []byte("hash-1"), atExpiry)
+	if !errors.Is(err, ErrPairingCodeExpired) || !errors.Is(err, ErrPairingCodeInvalid) {
+		t.Errorf("expired code error = %v, want ErrPairingCodeExpired", err)
 	}
-	if err := st.PairDevice(ctx, []byte("other"), "t1", "iPhone", []byte("hash-1"), now); !errors.Is(err, ErrPairingCodeInvalid) {
-		t.Errorf("unknown code error = %v, want ErrPairingCodeInvalid", err)
+	err = st.PairDevice(ctx, []byte("other"), "t1", "iPhone", []byte("hash-1"), now)
+	if !errors.Is(err, ErrPairingCodeInvalid) || errors.Is(err, ErrPairingCodeExpired) || errors.Is(err, ErrPairingCodeUsed) {
+		t.Errorf("unknown code error = %v, want only ErrPairingCodeInvalid", err)
 	}
 }
 

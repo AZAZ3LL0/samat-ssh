@@ -16,6 +16,8 @@ public protocol APIProtocol: Sendable {
     func getInfo(_ input: Operations.GetInfo.Input) async throws -> Operations.GetInfo.Output
     /// Exchange a one-time pairing code for a device token
     ///
+    /// An unknown code is 401 unauthorized; an expired or used one is 410 with pairing_code_expired or pairing_code_used.
+    ///
     /// - Remark: HTTP `POST /v1/pair`.
     /// - Remark: Generated from `#/paths//v1/pair/post(pair)`.
     func pair(_ input: Operations.Pair.Input) async throws -> Operations.Pair.Output
@@ -29,6 +31,25 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/ws`.
     /// - Remark: Generated from `#/paths//v1/ws/get(connectWebSocket)`.
     func connectWebSocket(_ input: Operations.ConnectWebSocket.Input) async throws -> Operations.ConnectWebSocket.Output
+    /// Device tokens of this agent that are not revoked, oldest first
+    ///
+    /// - Remark: HTTP `GET /v1/tokens`.
+    /// - Remark: Generated from `#/paths//v1/tokens/get(listTokens)`.
+    func listTokens(_ input: Operations.ListTokens.Input) async throws -> Operations.ListTokens.Output
+    /// Revoke the token of this request; the device stops being paired
+    ///
+    /// A retry after success meets a revoked token and gets 401 unauthorized, which the client treats as done.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tokens/self`.
+    /// - Remark: Generated from `#/paths//v1/tokens/self/delete(revokeOwnToken)`.
+    func revokeOwnToken(_ input: Operations.RevokeOwnToken.Input) async throws -> Operations.RevokeOwnToken.Output
+    /// Revoke the token of another device
+    ///
+    /// Revoking an already revoked token succeeds; an unknown id is 404 not_found.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tokens/{id}`.
+    /// - Remark: Generated from `#/paths//v1/tokens/{id}/delete(revokeToken)`.
+    func revokeToken(_ input: Operations.RevokeToken.Input) async throws -> Operations.RevokeToken.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -41,6 +62,8 @@ extension APIProtocol {
         try await getInfo(Operations.GetInfo.Input(headers: headers))
     }
     /// Exchange a one-time pairing code for a device token
+    ///
+    /// An unknown code is 401 unauthorized; an expired or used one is 410 with pairing_code_expired or pairing_code_used.
     ///
     /// - Remark: HTTP `POST /v1/pair`.
     /// - Remark: Generated from `#/paths//v1/pair/post(pair)`.
@@ -66,6 +89,43 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/ws/get(connectWebSocket)`.
     public func connectWebSocket(headers: Operations.ConnectWebSocket.Input.Headers = .init()) async throws -> Operations.ConnectWebSocket.Output {
         try await connectWebSocket(Operations.ConnectWebSocket.Input(headers: headers))
+    }
+    /// Device tokens of this agent that are not revoked, oldest first
+    ///
+    /// - Remark: HTTP `GET /v1/tokens`.
+    /// - Remark: Generated from `#/paths//v1/tokens/get(listTokens)`.
+    public func listTokens(
+        query: Operations.ListTokens.Input.Query = .init(),
+        headers: Operations.ListTokens.Input.Headers = .init()
+    ) async throws -> Operations.ListTokens.Output {
+        try await listTokens(Operations.ListTokens.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Revoke the token of this request; the device stops being paired
+    ///
+    /// A retry after success meets a revoked token and gets 401 unauthorized, which the client treats as done.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tokens/self`.
+    /// - Remark: Generated from `#/paths//v1/tokens/self/delete(revokeOwnToken)`.
+    public func revokeOwnToken(headers: Operations.RevokeOwnToken.Input.Headers) async throws -> Operations.RevokeOwnToken.Output {
+        try await revokeOwnToken(Operations.RevokeOwnToken.Input(headers: headers))
+    }
+    /// Revoke the token of another device
+    ///
+    /// Revoking an already revoked token succeeds; an unknown id is 404 not_found.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tokens/{id}`.
+    /// - Remark: Generated from `#/paths//v1/tokens/{id}/delete(revokeToken)`.
+    public func revokeToken(
+        path: Operations.RevokeToken.Input.Path,
+        headers: Operations.RevokeToken.Input.Headers
+    ) async throws -> Operations.RevokeToken.Output {
+        try await revokeToken(Operations.RevokeToken.Input(
+            path: path,
+            headers: headers
+        ))
     }
 }
 

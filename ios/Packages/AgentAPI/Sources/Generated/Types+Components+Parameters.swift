@@ -9,5 +9,16 @@
 public import Foundation
 extension Components {
     /// Types generated from the `#/components/parameters` section of the OpenAPI document.
-    public enum Parameters {}
+    public enum Parameters {
+        /// UUID v4, one per user intent, reused on every retry.
+        ///
+        /// - Remark: Generated from `#/components/parameters/IdempotencyKey`.
+        public typealias IdempotencyKey = Swift.String
+        /// - Remark: Generated from `#/components/parameters/Limit`.
+        public typealias Limit = Swift.Int
+        /// Opaque; nextCursor of the previous page.
+        ///
+        /// - Remark: Generated from `#/components/parameters/Cursor`.
+        public typealias Cursor = Swift.String
+    }
 }

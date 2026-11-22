@@ -85,8 +85,8 @@ func TestPairingCodeWorksOnce(t *testing.T) {
 	if _, _, err := svc.Pair(ctx, code, "iPhone"); err != nil {
 		t.Fatalf("first pairing: %v", err)
 	}
-	if _, _, err := svc.Pair(ctx, code, "iPad"); !errors.Is(err, ErrInvalidCode) {
-		t.Fatalf("second pairing error = %v, want ErrInvalidCode", err)
+	if _, _, err := svc.Pair(ctx, code, "iPad"); !errors.Is(err, ErrCodeUsed) || !errors.Is(err, ErrInvalidCode) {
+		t.Fatalf("second pairing error = %v, want ErrCodeUsed", err)
 	}
 }
 
@@ -98,15 +98,16 @@ func TestPairingCodeExpiresAfterTenMinutes(t *testing.T) {
 		t.Fatalf("new pairing code: %v", err)
 	}
 	c.advance(10 * time.Minute)
-	if _, _, err := svc.Pair(ctx, code, "iPhone"); !errors.Is(err, ErrInvalidCode) {
-		t.Fatalf("pairing with an expired code error = %v, want ErrInvalidCode", err)
+	if _, _, err := svc.Pair(ctx, code, "iPhone"); !errors.Is(err, ErrCodeExpired) || !errors.Is(err, ErrInvalidCode) {
+		t.Fatalf("pairing with an expired code error = %v, want ErrCodeExpired", err)
 	}
 }
 
 func TestPairRejectsUnknownCode(t *testing.T) {
 	svc, _, _ := newService(t)
-	if _, _, err := svc.Pair(context.Background(), "AAAAAAAA", "iPhone"); !errors.Is(err, ErrInvalidCode) {
-		t.Fatalf("error = %v, want ErrInvalidCode", err)
+	_, _, err := svc.Pair(context.Background(), "AAAAAAAA", "iPhone")
+	if !errors.Is(err, ErrInvalidCode) || errors.Is(err, ErrCodeExpired) || errors.Is(err, ErrCodeUsed) {
+		t.Fatalf("error = %v, want only ErrInvalidCode", err)
 	}
 }
 

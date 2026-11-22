@@ -89,6 +89,10 @@ public struct ErrorBanner: View {
             String(localized: "Too many attempts. Try again in a few minutes.", bundle: .module)
         case ._internal:
             String(localized: "The agent failed to handle the request.", bundle: .module)
+        case .pairingCodeExpired:
+            String(localized: "The pairing code expired. Run pulse-agent pair again.", bundle: .module)
+        case .pairingCodeUsed:
+            String(localized: "This pairing code was already used. Run pulse-agent pair again.", bundle: .module)
         }
     }
 }

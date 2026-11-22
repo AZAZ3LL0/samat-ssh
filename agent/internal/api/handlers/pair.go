@@ -29,10 +29,18 @@ func (s *Server) Pair(ctx context.Context, request gen.PairRequestObject) (gen.P
 
 	token, tokenID, err := s.auth.Pair(ctx, body.Code, body.DeviceName)
 	if errors.Is(err, auth.ErrInvalidCode) {
-		// One answer for unknown, expired and used codes: the caller learns
-		// nothing about which codes ever existed.
+		// Every miss counts toward the limit. Expired and used codes get their own
+		// answer so the user knows to run `pulse-agent pair` again; telling them
+		// apart needs the code itself, so guessing gains nothing from it.
 		s.limiter.Fail(addr)
-		return pairError(ctx, http.StatusUnauthorized, gen.Unauthorized, "pairing code is invalid or expired"), nil
+		switch {
+		case errors.Is(err, auth.ErrCodeExpired):
+			return pairError(ctx, http.StatusGone, gen.PairingCodeExpired, "pairing code expired"), nil
+		case errors.Is(err, auth.ErrCodeUsed):
+			return pairError(ctx, http.StatusGone, gen.PairingCodeUsed, "pairing code already used"), nil
+		default:
+			return pairError(ctx, http.StatusUnauthorized, gen.Unauthorized, "pairing code is invalid"), nil
+		}
 	}
 	if err != nil {
 		return nil, err

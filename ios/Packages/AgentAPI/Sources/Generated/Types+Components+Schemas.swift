@@ -80,6 +80,8 @@ extension Components {
             case upstreamUnavailable = "upstream_unavailable"
             case rateLimited = "rate_limited"
             case _internal = "internal"
+            case pairingCodeExpired = "pairing_code_expired"
+            case pairingCodeUsed = "pairing_code_used"
         }
         /// - Remark: Generated from `#/components/schemas/AgentInfo`.
         public struct AgentInfo: Codable, Hashable, Sendable {
@@ -182,6 +184,72 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case token
                 case tokenId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DeviceToken`.
+        public struct DeviceToken: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DeviceToken/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/DeviceToken/deviceName`.
+            public var deviceName: Swift.String
+            /// - Remark: Generated from `#/components/schemas/DeviceToken/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/DeviceToken/lastUsedAt`.
+            public var lastUsedAt: Foundation.Date?
+            /// The token of the request that lists the tokens.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DeviceToken/current`.
+            public var current: Swift.Bool
+            /// Creates a new `DeviceToken`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - deviceName:
+            ///   - createdAt:
+            ///   - lastUsedAt:
+            ///   - current: The token of the request that lists the tokens.
+            public init(
+                id: Swift.String,
+                deviceName: Swift.String,
+                createdAt: Foundation.Date,
+                lastUsedAt: Foundation.Date? = nil,
+                current: Swift.Bool
+            ) {
+                self.id = id
+                self.deviceName = deviceName
+                self.createdAt = createdAt
+                self.lastUsedAt = lastUsedAt
+                self.current = current
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case deviceName
+                case createdAt
+                case lastUsedAt
+                case current
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DeviceTokenPage`.
+        public struct DeviceTokenPage: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DeviceTokenPage/items`.
+            public var items: [Components.Schemas.DeviceToken]
+            /// - Remark: Generated from `#/components/schemas/DeviceTokenPage/nextCursor`.
+            public var nextCursor: Swift.String?
+            /// Creates a new `DeviceTokenPage`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - nextCursor:
+            public init(
+                items: [Components.Schemas.DeviceToken],
+                nextCursor: Swift.String? = nil
+            ) {
+                self.items = items
+                self.nextCursor = nextCursor
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case nextCursor
             }
         }
         /// - Remark: Generated from `#/components/schemas/WsEnvelope`.

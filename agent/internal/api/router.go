@@ -9,11 +9,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/handlers"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/middleware"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/auth"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/store"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/ws"
 )
 
@@ -29,7 +31,11 @@ type Deps struct {
 	Hostname     string
 	Auth         *auth.Service
 	Limiter      *auth.Limiter
-	Hub          *ws.Hub
+	// Store keeps Idempotency-Key outcomes of mutations.
+	Store *store.Store
+	// Now is the clock of the idempotency window.
+	Now func() time.Time
+	Hub *ws.Hub
 	// HostMetrics serves GET /v1/metrics/host; nil when the host cannot be measured.
 	HostMetrics handlers.HostMetricsSource
 	Logger      *slog.Logger
@@ -90,10 +96,25 @@ func NewHandler(deps Deps) (http.Handler, error) {
 		},
 	)
 
+	idempotent := middleware.IdempotentOperations(spec)
+	replay := middleware.Idempotency(deps.Store, deps.Now, deps.Logger)
+	onlyMutations := func(next http.Handler) http.Handler {
+		wrapped := replay(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if idempotent[r.Pattern] {
+				wrapped.ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+
 	mux := http.NewServeMux()
 	gen.HandlerWithOptions(strict, gen.StdHTTPServerOptions{
 		BaseRouter: mux,
+		// The last middleware runs first: authorization, then replay of a known key.
 		Middlewares: []gen.MiddlewareFunc{
+			onlyMutations,
 			middleware.Auth(deps.Auth, deps.Limiter, middleware.PublicOperations(spec), deps.Logger),
 		},
 		ErrorHandlerFunc: badRequest,

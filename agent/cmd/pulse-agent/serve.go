@@ -77,6 +77,8 @@ func serve(ctx context.Context, e env, listener net.Listener, logger *slog.Logge
 		Hostname:     hostname,
 		Auth:         e.auth,
 		Limiter:      auth.NewLimiter(time.Now),
+		Store:        e.store,
+		Now:          time.Now,
 		Hub:          hub,
 		HostMetrics:  hostMetrics,
 		Logger:       logger,
