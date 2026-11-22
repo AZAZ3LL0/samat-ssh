@@ -40,6 +40,12 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: dev.azaz3ll0.pulse.pair
             CFBundleURLSchemes: [pulse]
+        # Agents serve a self-signed certificate on any host or IP the user enters. ATS
+        # re-checks the trust PinningDelegate accepted and rejects it (-9802), and a domain
+        # exception cannot name hosts known only at runtime. The SPKI pin still guards every
+        # connection; the app only ever dials https/wss.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
     dependencies:
       - package: PulsePackages
         product: AgentKit
