@@ -41,6 +41,10 @@ func (m *mutation) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	if status == 0 {
 		status = http.StatusAccepted
 	}
+	if status == http.StatusNoContent {
+		w.WriteHeader(status)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_, _ = fmt.Fprintf(w, `{"effect":%d}`, n)
@@ -108,6 +112,24 @@ func TestRepeatWithSameKeyAndBodyHasOneEffect(t *testing.T) {
 	if got := second.Header().Get("Content-Type"); got != "application/json" {
 		t.Errorf("replay Content-Type = %q, want application/json", got)
 	}
+}
+
+func TestRepeatOfResponseWithoutBodyHasOneEffect(t *testing.T) {
+	f := newIdempotencyFixture(t)
+	f.mutation.status.Store(http.StatusNoContent)
+	first := f.post(keyA, `{}`)
+	second := f.post(keyA, `{}`)
+
+	if got := f.mutation.effects.Load(); got != 1 {
+		t.Fatalf("effects = %d, want exactly 1", got)
+	}
+	if first.Code != http.StatusNoContent || second.Code != http.StatusNoContent || second.Body.Len() != 0 {
+		t.Errorf("responses = %d, then %d %q; want 204 twice without a body", first.Code, second.Code, second.Body)
+	}
+	if got := second.Header().Get("Content-Type"); got != "" {
+		t.Errorf("replay Content-Type = %q, want none for an empty body", got)
+	}
+	wantError(t, f.post(keyA, `{"other":true}`), http.StatusConflict, gen.IdempotencyConflict)
 }
 
 func TestSameKeyWithDifferentBodyConflicts(t *testing.T) {

@@ -57,7 +57,9 @@ func Idempotency(st *store.Store, now func() time.Time, logger *slog.Logger) fun
 					WriteError(w, r, http.StatusConflict, gen.IdempotencyConflict, "key was used with a different request")
 					return
 				}
-				w.Header().Set("Content-Type", "application/json")
+				if len(record.Response) > 0 {
+					w.Header().Set("Content-Type", "application/json")
+				}
 				w.WriteHeader(record.StatusCode)
 				_, _ = w.Write(record.Response)
 				return
@@ -79,8 +81,9 @@ func Idempotency(st *store.Store, now func() time.Time, logger *slog.Logger) fun
 				Key:         key,
 				RequestHash: requestHash,
 				StatusCode:  recorder.status,
-				Response:    recorder.body.Bytes(),
-				CreatedAt:   now(),
+				// Not nil for an empty body (204): the column is NOT NULL.
+				Response:  append([]byte{}, recorder.body.Bytes()...),
+				CreatedAt: now(),
 			})
 			if err != nil {
 				logger.ErrorContext(ctx, "store idempotency record", "error", err, "requestId", RequestIDFrom(ctx))
