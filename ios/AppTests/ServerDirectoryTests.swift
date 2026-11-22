@@ -52,4 +52,17 @@ import Testing
         #expect(context.connection == .connected)
         #expect(context.info?.hostname == "demo")
     }
+
+    @Test func serverAddedInForcedDemoStaysOnFakeAgent() async throws {
+        let environment = AppEnvironment(
+            container: try PulseStore.makeContainer(inMemory: true),
+            secrets: InMemorySecretStore(),
+            launchedInDemo: true
+        )
+        let record = ServerRecord(name: "demo", host: "demo.local", sortOrder: 0)
+        let entry = try #require(ServerDirectory.entries(records: [record], demoEnabled: false).first)
+        let context = environment.makeContext(for: entry)
+        await context.connect()
+        #expect(context.connection == .connected)
+    }
 }

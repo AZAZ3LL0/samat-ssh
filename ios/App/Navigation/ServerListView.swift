@@ -1,5 +1,6 @@
 import DesignSystem
 import Persistence
+import ServerList
 import SwiftData
 import SwiftUI
 
@@ -10,6 +11,7 @@ struct ServerListView: View {
     @Query private var records: [ServerRecord]
     @Query private var settings: [AppSettings]
     @State private var selection: ServerEntry.ID?
+    @State private var isAddingServer = false
 
     private var entries: [ServerEntry] {
         ServerDirectory.entries(records: records, demoEnabled: environment.isDemoEnabled(settings: settings.first))
@@ -27,16 +29,26 @@ struct ServerListView: View {
                 if entries.isEmpty {
                     EmptyState(
                         title: String(localized: "No servers"),
-                        message: String(
-                            localized: "Pairing a server comes in a later update. Try the demo server meanwhile."),
+                        // Release builds have no debug menu: this is the only switch for demo mode there.
+                        message: String(localized: "Add a server with the + button, or try the demo server."),
                         systemImage: "server.rack",
                         action: (title: String(localized: "Try demo"), run: enableDemo)
                     )
                 }
             }
-            #if DEBUG
-                .toolbar { ToolbarItem(placement: .topBarTrailing) { DebugMenu() } }
-            #endif
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(String(localized: "Add server"), systemImage: "plus") { isAddingServer = true }
+                }
+                #if DEBUG
+                    ToolbarItem(placement: .topBarTrailing) { DebugMenu() }
+                #endif
+            }
+            .sheet(isPresented: $isAddingServer) {
+                AddServerView(model: environment.makeAddServerModel(deviceName: UIDevice.current.name)) { id in
+                    selection = id
+                }
+            }
         } detail: {
             if let entry = entries.first(where: { $0.id == selection }) {
                 NavigationStack {

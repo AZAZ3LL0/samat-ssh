@@ -2,6 +2,7 @@ import AgentKit
 import Foundation
 import Observation
 import Persistence
+import ServerList
 import SwiftData
 
 /// Composition root: the only place that builds stores and clients. Views reach it through
@@ -11,11 +12,14 @@ import SwiftData
     let secrets: any SecretStore
     /// Demo mode forced by the launch argument `-PulseDemo YES` or the Demo build configuration.
     let launchedInDemo: Bool
+    /// A forced demo pairs with the fake agent at any address, so adding a server works offline.
+    let pairing: any AgentPairing
 
     init(container: ModelContainer, secrets: any SecretStore, launchedInDemo: Bool) {
         self.container = container
         self.secrets = secrets
         self.launchedInDemo = launchedInDemo
+        self.pairing = launchedInDemo ? FakeAgentPairing() : LiveAgentPairing()
     }
 
     /// Picks stores for this launch. A forced demo keeps everything in memory, so App Review
@@ -37,7 +41,8 @@ import SwiftData
     }
 
     func makeContext(for entry: ServerEntry) -> ServerContext {
-        guard let endpoint = entry.endpoint else {
+        // Servers added in a forced demo were paired with the fake agent; they stay on it.
+        guard let endpoint = entry.endpoint, !launchedInDemo else {
             return ServerContext(serverId: entry.id, client: FakeAgentClient())
         }
         let pin = (try? secrets.read(.spki(entry.id))).flatMap { String(data: $0, encoding: .utf8) }
@@ -46,5 +51,9 @@ import SwiftData
         // so a record without one fails as pinMismatch and asks for pairing again.
         let client = LiveAgentClient(baseURL: endpoint, pin: pin ?? "", token: token)
         return ServerContext(serverId: entry.id, client: client)
+    }
+
+    func makeAddServerModel(deviceName: String) -> AddServerModel {
+        AddServerModel(pairing: pairing, secrets: secrets, context: container.mainContext, deviceName: deviceName)
     }
 }

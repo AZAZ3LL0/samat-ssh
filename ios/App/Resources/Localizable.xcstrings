@@ -11,6 +11,26 @@
         }
       }
     },
+    "Add a server with the + button, or try the demo server." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте сервер кнопкой +, или попробуйте демо-сервер."
+          }
+        }
+      }
+    },
+    "Add server" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить сервер"
+          }
+        }
+      }
+    },
     "Agent version" : {
       "localizations" : {
         "ru" : {
@@ -142,16 +162,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Обзор"
-          }
-        }
-      }
-    },
-    "Pairing a server comes in a later update. Try the demo server meanwhile." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подключение сервера появится в следующем обновлении. Пока попробуйте демо-сервер."
           }
         }
       }
