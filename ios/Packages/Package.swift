@@ -98,7 +98,8 @@ let package = Package(
             name: "ServerList",
             dependencies: ["AgentKit", "DesignSystem", "Persistence"],
             path: "Features/ServerList/Sources/ServerList",
-            resources: [.process("Resources")]
+            // install.sh is a symlink to deploy/install.sh: the SSH install runs the same script as a manual one.
+            resources: [.process("Resources"), .copy("install.sh")]
         ),
         .testTarget(
             name: "ServerListTests",
