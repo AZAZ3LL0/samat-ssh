@@ -18,7 +18,13 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0"),
         .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.1.0"),
         .package(url: "https://github.com/apple/swift-http-types", from: "1.0.0"),
-        .package(url: "https://github.com/orlandos-nl/Citadel", from: "0.12.1"),
+        // Pinned to the merge of `withExec` (stdin for exec, needed by `sudo -S`), the last commit before
+        // 0.12.1 moved swift-nio-ssh to a third-party fork. Until then Citadel uses its author's fork,
+        // which adds RSA and other algorithms to Apple's swift-nio-ssh. Move to a release that keeps it.
+        .package(url: "https://github.com/orlandos-nl/Citadel", revision: "69d80d39ca3b0bac5f04551a97af5dd7a827f887"),
+        // Citadel's own dependencies; AgentKit uses their key and buffer types directly.
+        .package(url: "https://github.com/apple/swift-nio", from: "2.65.0"),
+        .package(url: "https://github.com/Joannis/swift-nio-ssh.git", "0.3.4"..<"0.4.0"),
     ],
     targets: [
         .target(
@@ -40,12 +46,19 @@ let package = Package(
                 .product(name: "OpenAPIURLSession", package: "swift-openapi-urlsession"),
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "Citadel", package: "Citadel"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOSSH", package: "swift-nio-ssh"),
             ],
             path: "AgentKit/Sources"
         ),
         .testTarget(
             name: "AgentKitTests",
-            dependencies: ["AgentKit", "AgentAPI", "Fixtures"],
+            dependencies: [
+                "AgentKit", "AgentAPI", "Fixtures",
+                .product(name: "Citadel", package: "Citadel"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOSSH", package: "swift-nio-ssh"),
+            ],
             path: "AgentKit/Tests/AgentKitTests"
         ),
         .target(
