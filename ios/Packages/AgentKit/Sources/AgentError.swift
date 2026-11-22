@@ -6,6 +6,7 @@ public typealias AgentInfo = Components.Schemas.AgentInfo
 public typealias AgentFeature = Components.Schemas.AgentFeature
 public typealias HostMetrics = Components.Schemas.HostMetrics
 public typealias ErrorCode = Components.Schemas.ErrorCode
+public typealias PairResponse = Components.Schemas.PairResponse
 
 /// Every failure at the AgentKit boundary. Features show text from their own
 /// localization per case; `ErrorCode.message` from the agent is never shown.

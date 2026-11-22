@@ -39,6 +39,8 @@ targets:
         product: Overview
       - package: PulsePackages
         product: Persistence
+      - package: PulsePackages
+        product: ServerList
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

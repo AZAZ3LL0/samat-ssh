@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "Fixtures", targets: ["Fixtures"]),
         .library(name: "Overview", targets: ["Overview"]),
         .library(name: "Persistence", targets: ["Persistence"]),
+        .library(name: "ServerList", targets: ["ServerList"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0"),
@@ -77,6 +78,17 @@ let package = Package(
             name: "OverviewTests",
             dependencies: ["Overview", "AgentKit"],
             path: "Features/Overview/Tests/OverviewTests"
+        ),
+        .target(
+            name: "ServerList",
+            dependencies: ["AgentKit", "DesignSystem", "Persistence"],
+            path: "Features/ServerList/Sources/ServerList",
+            resources: [.process("Resources")]
+        ),
+        .testTarget(
+            name: "ServerListTests",
+            dependencies: ["ServerList", "AgentKit", "Persistence"],
+            path: "Features/ServerList/Tests/ServerListTests"
         ),
         .target(
             name: "Persistence",

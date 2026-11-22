@@ -41,24 +41,34 @@ public enum SPKIFingerprint {
 /// Accepts exactly the agent whose leaf certificate matches the pin. The agent's
 /// certificate is self-signed, so the pin replaces CA validation; there is no
 /// "trust anyway" path, re-pinning happens only through pairing again.
+///
+/// Without a pin the delegate trusts on first use: it accepts any agent key and records its
+/// fingerprint, which the user compares with `pulse-agent pair` before pairing. Only the probe
+/// of the public `GET /v1/info` runs in that mode.
 final class PinningDelegate: NSObject, URLSessionDelegate, Sendable {
-    private let pin: String
-    private let rejected = OSAllocatedUnfairLock(initialState: false)
+    private let pin: String?
+    private let state = OSAllocatedUnfairLock(initialState: (rejected: false, presented: String?.none))
 
-    init(pin: String) {
+    init(pin: String?) {
         self.pin = pin
     }
 
     /// True once a server presented a different key; URLSession reports that only as a cancellation.
-    var didRejectPin: Bool { rejected.withLock { $0 } }
+    var didRejectPin: Bool { state.withLock { $0.rejected } }
+    /// Fingerprint of the last key a server presented.
+    var presentedFingerprint: String? { state.withLock { $0.presented } }
 
     static func matches(_ trust: SecTrust, pin: String) -> Bool {
+        fingerprint(of: trust) == pin
+    }
+
+    static func fingerprint(of trust: SecTrust) -> String? {
         guard let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
             let leaf = chain.first
         else {
-            return false
+            return nil
         }
-        return SPKIFingerprint.of(leaf) == pin
+        return SPKIFingerprint.of(leaf)
     }
 
     func urlSession(
@@ -70,10 +80,16 @@ final class PinningDelegate: NSObject, URLSessionDelegate, Sendable {
         else {
             return (.performDefaultHandling, nil)
         }
-        guard Self.matches(trust, pin: pin) else {
-            rejected.withLock { $0 = true }
+        guard accept(Self.fingerprint(of: trust)) else {
             return (.cancelAuthenticationChallenge, nil)
         }
         return (.useCredential, URLCredential(trust: trust))
+    }
+
+    /// Records the presented key and decides on it; a key the agent never generates is always rejected.
+    func accept(_ presented: String?) -> Bool {
+        let accepted = presented != nil && (pin == nil || presented == pin)
+        state.withLock { $0 = (rejected: $0.rejected || !accepted, presented: presented ?? $0.presented) }
+        return accepted
     }
 }

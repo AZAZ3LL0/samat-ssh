@@ -1,0 +1,196 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "A different fingerprint means another machine answered. Check the address and the network." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другой отпечаток значит, что ответила другая машина. Проверьте адрес и сеть."
+          }
+        }
+      }
+    },
+    "Add server" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить сервер"
+          }
+        }
+      }
+    },
+    "Agent version" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия агента"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена"
+          }
+        }
+      }
+    },
+    "Connect" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключиться"
+          }
+        }
+      }
+    },
+    "Fingerprint" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отпечаток"
+          }
+        }
+      }
+    },
+    "Fingerprints match" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отпечатки совпадают"
+          }
+        }
+      }
+    },
+    "Host or IP address" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хост или IP-адрес"
+          }
+        }
+      }
+    },
+    "Hostname" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя хоста"
+          }
+        }
+      }
+    },
+    "Name" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название"
+          }
+        }
+      }
+    },
+    "Pair" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Привязать"
+          }
+        }
+      }
+    },
+    "Pairing code" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Код привязки"
+          }
+        }
+      }
+    },
+    "Port" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Порт"
+          }
+        }
+      }
+    },
+    "Run sudo pulse-agent pair on the server. Go on only if its fingerprint is exactly the same." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполните на сервере sudo pulse-agent pair. Продолжайте, только если fingerprint совпадает полностью."
+          }
+        }
+      }
+    },
+    "The agent listens on port 7443 unless its config.yaml says otherwise." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент слушает порт 7443, если в его config.yaml не указан другой."
+          }
+        }
+      }
+    },
+    "The code from pulse-agent pair works once, for 10 minutes." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Код из pulse-agent pair одноразовый и действует 10 минут."
+          }
+        }
+      }
+    },
+    "The code is wrong, expired or already used. Run pulse-agent pair again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Код неверный, просрочен или уже использован. Выполните pulse-agent pair ещё раз."
+          }
+        }
+      }
+    },
+    "The server paired, but the app could not save it. Try again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер привязан, но приложение не смогло его сохранить. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "They differ" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отличаются"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
