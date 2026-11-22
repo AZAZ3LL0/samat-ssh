@@ -58,6 +58,8 @@ func newFixture(t *testing.T) *fixture {
 		Hostname:     "vps-1",
 		Auth:         f.auth,
 		Limiter:      auth.NewLimiter(clock),
+		Store:        st,
+		Now:          clock,
 		Hub:          hub,
 		Logger:       logger,
 	})

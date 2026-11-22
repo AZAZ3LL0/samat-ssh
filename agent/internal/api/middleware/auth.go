@@ -12,6 +12,7 @@ import (
 
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/api/gen"
 	"github.com/AZAZ3LL0/samat-ssh/agent/internal/auth"
+	"github.com/AZAZ3LL0/samat-ssh/agent/internal/store"
 )
 
 // PublicOperations returns the mux patterns ("GET /v1/info") of the operations
@@ -29,7 +30,33 @@ func PublicOperations(spec *openapi3.T) map[string]bool {
 	return public
 }
 
+// IdempotentOperations returns the mux patterns of the operations that take an
+// Idempotency-Key header, so every mutation the contract declares gets replay
+// protection without a list kept by hand.
+func IdempotentOperations(spec *openapi3.T) map[string]bool {
+	idempotent := make(map[string]bool)
+	for path, item := range spec.Paths.Map() {
+		for method, operation := range item.Operations() {
+			for _, parameter := range operation.Parameters {
+				if parameter.Value != nil && parameter.Value.In == openapi3.ParameterInHeader &&
+					parameter.Value.Name == IdempotencyKeyHeader {
+					idempotent[method+" "+path] = true
+				}
+			}
+		}
+	}
+	return idempotent
+}
+
 type clientAddrKey struct{}
+
+type tokenKey struct{}
+
+// TokenFrom returns the device token that authorized the request; false on public operations.
+func TokenFrom(ctx context.Context) (store.Token, bool) {
+	token, ok := ctx.Value(tokenKey{}).(store.Token)
+	return token, ok
+}
 
 // ClientAddrFrom returns the peer address recorded by Auth.
 func ClientAddrFrom(ctx context.Context) string {
@@ -60,7 +87,7 @@ func Auth(service *auth.Service, limiter *auth.Limiter, public map[string]bool, 
 				WriteError(w, r, http.StatusUnauthorized, gen.Unauthorized, "missing bearer token")
 				return
 			}
-			_, err := service.Authenticate(r.Context(), token)
+			record, err := service.Authenticate(r.Context(), token)
 			if errors.Is(err, auth.ErrInvalidToken) {
 				limiter.Fail(addr)
 				WriteError(w, r, http.StatusUnauthorized, gen.Unauthorized, "invalid or revoked token")
@@ -71,7 +98,7 @@ func Auth(service *auth.Service, limiter *auth.Limiter, public map[string]bool, 
 				WriteError(w, r, http.StatusInternalServerError, gen.Internal, "authentication failed")
 				return
 			}
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), tokenKey{}, record)))
 		})
 	}
 }
