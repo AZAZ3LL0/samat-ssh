@@ -60,7 +60,7 @@ public enum AgentError: Error, Sendable, Equatable {
 /// Version gate between the app and an agent, `tech.md` 6.1.
 public enum AgentCompatibility {
     /// Core version the app is built against; equals `info.version` of `api/openapi.yaml`.
-    public static let clientApiVersion = 2
+    public static let clientApiVersion = 3
 
     /// - Parameter requiredApiVersion: the newest core version a feature of the app needs.
     public static func check(

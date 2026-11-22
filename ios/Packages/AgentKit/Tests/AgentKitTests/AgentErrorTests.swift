@@ -54,7 +54,7 @@ import Testing
     }
 
     @Test func acceptsMatchingVersions() throws {
-        try AgentCompatibility.check(info(api: 2, minClient: 1))
+        try AgentCompatibility.check(info(api: AgentCompatibility.clientApiVersion, minClient: 1))
         try AgentCompatibility.check(info(api: 5, minClient: 2), requiredApiVersion: 2)
     }
 
@@ -65,8 +65,9 @@ import Testing
     }
 
     @Test func rejectsOlderClient() {
-        #expect(throws: AgentError.incompatibleClient(min: 3)) {
-            try AgentCompatibility.check(info(api: 3, minClient: 3))
+        let newer = AgentCompatibility.clientApiVersion + 1
+        #expect(throws: AgentError.incompatibleClient(min: newer)) {
+            try AgentCompatibility.check(info(api: newer, minClient: newer))
         }
     }
 }
