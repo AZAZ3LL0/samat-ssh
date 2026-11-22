@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Pulse Agent API
   # Core version. Bump by 1 on every change to this file; append-only within /v1.
-  version: "2"
+  version: "3"
   description: REST and WebSocket contract between the Pulse iOS app and pulse-agent.
 servers:
   - url: https://{host}:{port}
@@ -48,6 +48,9 @@ paths:
     post:
       operationId: pair
       summary: Exchange a one-time pairing code for a device token
+      description: >-
+        An unknown code is 401 unauthorized; an expired or used one is 410 with
+        pairing_code_expired or pairing_code_used.
       security: []
       requestBody:
         required: true
@@ -98,6 +101,59 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /v1/tokens:
+    get:
+      operationId: listTokens
+      summary: Device tokens of this agent that are not revoked, oldest first
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: A page of device tokens
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceTokenPage"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/tokens/self:
+    delete:
+      operationId: revokeOwnToken
+      summary: Revoke the token of this request; the device stops being paired
+      description: >-
+        A retry after success meets a revoked token and gets 401 unauthorized,
+        which the client treats as done.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/tokens/{id}:
+    delete:
+      operationId: revokeToken
+      summary: Revoke the token of another device
+      description: Revoking an already revoked token succeeds; an unknown id is 404 not_found.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "204":
+          $ref: "#/components/responses/NoContent"
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -111,7 +167,36 @@ components:
       schema:
         type: string
 
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID v4, one per user intent, reused on every retry.
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque; nextCursor of the previous page.
+      schema:
+        type: string
+
   responses:
+    NoContent:
+      description: Done
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/XRequestId"
     Error:
       description: Error
       headers:
@@ -153,6 +238,10 @@ components:
         - upstream_unavailable
         - rate_limited
         - internal
+        # 410 from POST /v1/pair: the code existed, but its 10 minutes are over.
+        - pairing_code_expired
+        # 410 from POST /v1/pair: the code already paired a device. An unknown code stays 401 unauthorized.
+        - pairing_code_used
 
     AgentInfo:
       type: object
@@ -195,6 +284,35 @@ components:
           type: string
         tokenId:
           type: string
+
+    DeviceToken:
+      type: object
+      required: [id, deviceName, createdAt, lastUsedAt, current]
+      properties:
+        id:
+          type: string
+        deviceName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: [string, "null"]
+          format: date-time
+        current:
+          type: boolean
+          description: The token of the request that lists the tokens.
+
+    DeviceTokenPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeviceToken"
+        nextCursor:
+          type: [string, "null"]
 
     WsEnvelope:
       type: object

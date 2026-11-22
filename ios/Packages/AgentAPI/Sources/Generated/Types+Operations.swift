@@ -161,6 +161,8 @@ public enum Operations {
     }
     /// Exchange a one-time pairing code for a device token
     ///
+    /// An unknown code is 401 unauthorized; an expired or used one is 410 with pairing_code_expired or pairing_code_used.
+    ///
     /// - Remark: HTTP `POST /v1/pair`.
     /// - Remark: Generated from `#/paths//v1/pair/post(pair)`.
     public enum Pair {
@@ -549,6 +551,425 @@ public enum Operations {
             /// Error
             ///
             /// - Remark: Generated from `#/paths//v1/ws/get(connectWebSocket)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Device tokens of this agent that are not revoked, oldest first
+    ///
+    /// - Remark: HTTP `GET /v1/tokens`.
+    /// - Remark: Generated from `#/paths//v1/tokens/get(listTokens)`.
+    public enum ListTokens {
+        public static let id: Swift.String = "listTokens"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/tokens/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/tokens/GET/query/limit`.
+                public var limit: Components.Parameters.Limit?
+                /// Opaque; nextCursor of the previous page.
+                ///
+                /// - Remark: Generated from `#/paths/v1/tokens/GET/query/cursor`.
+                public var cursor: Components.Parameters.Cursor?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - limit:
+                ///   - cursor: Opaque; nextCursor of the previous page.
+                public init(
+                    limit: Components.Parameters.Limit? = nil,
+                    cursor: Components.Parameters.Cursor? = nil
+                ) {
+                    self.limit = limit
+                    self.cursor = cursor
+                }
+            }
+            public var query: Operations.ListTokens.Input.Query
+            /// - Remark: Generated from `#/paths/v1/tokens/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListTokens.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListTokens.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListTokens.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListTokens.Input.Query = .init(),
+                headers: Operations.ListTokens.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/tokens/GET/responses/200/headers`.
+                public struct Headers: Sendable, Hashable {
+                    /// Request identifier, present on every response.
+                    ///
+                    /// - Remark: Generated from `#/paths/v1/tokens/GET/responses/200/headers/X-Request-Id`.
+                    public var xRequestId: Components.Headers.XRequestId
+                    /// Creates a new `Headers`.
+                    ///
+                    /// - Parameters:
+                    ///   - xRequestId: Request identifier, present on every response.
+                    public init(xRequestId: Components.Headers.XRequestId) {
+                        self.xRequestId = xRequestId
+                    }
+                }
+                /// Received HTTP response headers
+                public var headers: Operations.ListTokens.Output.Ok.Headers
+                /// - Remark: Generated from `#/paths/v1/tokens/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/tokens/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.DeviceTokenPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.DeviceTokenPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListTokens.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - headers: Received HTTP response headers
+                ///   - body: Received HTTP response body
+                public init(
+                    headers: Operations.ListTokens.Output.Ok.Headers,
+                    body: Operations.ListTokens.Output.Ok.Body
+                ) {
+                    self.headers = headers
+                    self.body = body
+                }
+            }
+            /// A page of device tokens
+            ///
+            /// - Remark: Generated from `#/paths//v1/tokens/get(listTokens)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListTokens.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListTokens.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Error
+            ///
+            /// - Remark: Generated from `#/paths//v1/tokens/get(listTokens)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Revoke the token of this request; the device stops being paired
+    ///
+    /// A retry after success meets a revoked token and gets 401 unauthorized, which the client treats as done.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tokens/self`.
+    /// - Remark: Generated from `#/paths//v1/tokens/self/delete(revokeOwnToken)`.
+    public enum RevokeOwnToken {
+        public static let id: Swift.String = "revokeOwnToken"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/tokens/self/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                /// UUID v4, one per user intent, reused on every retry.
+                ///
+                /// - Remark: Generated from `#/paths/v1/tokens/self/DELETE/header/Idempotency-Key`.
+                public var idempotencyKey: Components.Parameters.IdempotencyKey
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RevokeOwnToken.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - idempotencyKey: UUID v4, one per user intent, reused on every retry.
+                ///   - accept:
+                public init(
+                    idempotencyKey: Components.Parameters.IdempotencyKey,
+                    accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RevokeOwnToken.AcceptableContentType>] = .defaultValues()
+                ) {
+                    self.idempotencyKey = idempotencyKey
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RevokeOwnToken.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.RevokeOwnToken.Input.Headers) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            /// Done
+            ///
+            /// - Remark: Generated from `#/paths//v1/tokens/self/delete(revokeOwnToken)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Components.Responses.NoContent)
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Components.Responses.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Error
+            ///
+            /// - Remark: Generated from `#/paths//v1/tokens/self/delete(revokeOwnToken)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Revoke the token of another device
+    ///
+    /// Revoking an already revoked token succeeds; an unknown id is 404 not_found.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tokens/{id}`.
+    /// - Remark: Generated from `#/paths//v1/tokens/{id}/delete(revokeToken)`.
+    public enum RevokeToken {
+        public static let id: Swift.String = "revokeToken"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/tokens/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/tokens/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.RevokeToken.Input.Path
+            /// - Remark: Generated from `#/paths/v1/tokens/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                /// UUID v4, one per user intent, reused on every retry.
+                ///
+                /// - Remark: Generated from `#/paths/v1/tokens/{id}/DELETE/header/Idempotency-Key`.
+                public var idempotencyKey: Components.Parameters.IdempotencyKey
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RevokeToken.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - idempotencyKey: UUID v4, one per user intent, reused on every retry.
+                ///   - accept:
+                public init(
+                    idempotencyKey: Components.Parameters.IdempotencyKey,
+                    accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RevokeToken.AcceptableContentType>] = .defaultValues()
+                ) {
+                    self.idempotencyKey = idempotencyKey
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RevokeToken.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RevokeToken.Input.Path,
+                headers: Operations.RevokeToken.Input.Headers
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            /// Done
+            ///
+            /// - Remark: Generated from `#/paths//v1/tokens/{id}/delete(revokeToken)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Components.Responses.NoContent)
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Components.Responses.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Error
+            ///
+            /// - Remark: Generated from `#/paths//v1/tokens/{id}/delete(revokeToken)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

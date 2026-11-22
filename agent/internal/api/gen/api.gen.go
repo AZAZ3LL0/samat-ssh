@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -21,6 +22,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oapi-codegen/nullable"
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for AgentFeature.
@@ -71,6 +73,8 @@ const (
 	Internal            ErrorCode = "internal"
 	InvalidRequest      ErrorCode = "invalid_request"
 	NotFound            ErrorCode = "not_found"
+	PairingCodeExpired  ErrorCode = "pairing_code_expired"
+	PairingCodeUsed     ErrorCode = "pairing_code_used"
 	RateLimited         ErrorCode = "rate_limited"
 	Unauthorized        ErrorCode = "unauthorized"
 	Unsupported         ErrorCode = "unsupported"
@@ -93,6 +97,10 @@ func (e ErrorCode) Valid() bool {
 	case InvalidRequest:
 		return true
 	case NotFound:
+		return true
+	case PairingCodeExpired:
+		return true
+	case PairingCodeUsed:
 		return true
 	case RateLimited:
 		return true
@@ -159,6 +167,23 @@ type AgentInfo struct {
 	Features            []AgentFeature `json:"features"`
 	Hostname            string         `json:"hostname"`
 	MinClientApiVersion int            `json:"minClientApiVersion"`
+}
+
+// DeviceToken defines model for DeviceToken.
+type DeviceToken struct {
+	CreatedAt apitime.Time `json:"createdAt"`
+
+	// Current The token of the request that lists the tokens.
+	Current    bool                            `json:"current"`
+	DeviceName string                          `json:"deviceName"`
+	Id         string                          `json:"id"`
+	LastUsedAt nullable.Nullable[apitime.Time] `json:"lastUsedAt"`
+}
+
+// DeviceTokenPage defines model for DeviceTokenPage.
+type DeviceTokenPage struct {
+	Items      []DeviceToken             `json:"items"`
+	NextCursor nullable.Nullable[string] `json:"nextCursor"`
 }
 
 // Error defines model for Error.
@@ -249,6 +274,35 @@ type WsUnsubscribePayload struct {
 	RequestId string `json:"requestId"`
 }
 
+// Cursor defines model for Cursor.
+type Cursor = string
+
+// IdempotencyKey defines model for IdempotencyKey.
+type IdempotencyKey = openapi_types.UUID
+
+// Limit defines model for Limit.
+type Limit = int
+
+// ListTokensParams defines parameters for ListTokens.
+type ListTokensParams struct {
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Cursor Opaque; nextCursor of the previous page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// RevokeOwnTokenParams defines parameters for RevokeOwnToken.
+type RevokeOwnTokenParams struct {
+	// IdempotencyKey UUID v4, one per user intent, reused on every retry.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// RevokeTokenParams defines parameters for RevokeToken.
+type RevokeTokenParams struct {
+	// IdempotencyKey UUID v4, one per user intent, reused on every retry.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
 // PairJSONRequestBody defines body for Pair for application/json ContentType.
 type PairJSONRequestBody = PairRequest
 
@@ -263,6 +317,15 @@ type ServerInterface interface {
 	// Pair Exchange a one-time pairing code for a device token
 	// (POST /v1/pair)
 	Pair(w http.ResponseWriter, r *http.Request)
+	// ListTokens Device tokens of this agent that are not revoked, oldest first
+	// (GET /v1/tokens)
+	ListTokens(w http.ResponseWriter, r *http.Request, params ListTokensParams)
+	// RevokeOwnToken Revoke the token of this request; the device stops being paired
+	// (DELETE /v1/tokens/self)
+	RevokeOwnToken(w http.ResponseWriter, r *http.Request, params RevokeOwnTokenParams)
+	// RevokeToken Revoke the token of another device
+	// (DELETE /v1/tokens/{id})
+	RevokeToken(w http.ResponseWriter, r *http.Request, id string, params RevokeTokenParams)
 	// ConnectWebSocket WebSocket upgrade; messages are WsEnvelope
 	// (GET /v1/ws)
 	ConnectWebSocket(w http.ResponseWriter, r *http.Request)
@@ -310,6 +373,151 @@ func (siw *ServerInterfaceWrapper) Pair(w http.ResponseWriter, r *http.Request) 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Pair(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListTokens operation middleware
+func (siw *ServerInterfaceWrapper) ListTokens(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTokensParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListTokens(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeOwnToken operation middleware
+func (siw *ServerInterfaceWrapper) RevokeOwnToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeOwnTokenParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeOwnToken(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeToken operation middleware
+func (siw *ServerInterfaceWrapper) RevokeToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeTokenParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeToken(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -457,6 +665,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/pair", wrapper.Pair)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/metrics/host", wrapper.GetMetricsHost)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/ws", wrapper.ConnectWebSocket)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/tokens", wrapper.ListTokens)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/tokens/self", wrapper.RevokeOwnToken)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/v1/tokens/{id}", wrapper.RevokeToken)
 
 	return m
 }
@@ -468,6 +679,13 @@ type ErrorJSONResponse struct {
 	Body Error
 
 	Headers ErrorResponseHeaders
+}
+
+type NoContentResponseHeaders struct {
+	XRequestId string
+}
+type NoContentResponse struct {
+	Headers NoContentResponseHeaders
 }
 
 type GetInfoRequestObject struct {
@@ -615,6 +833,126 @@ func (response PairdefaultJSONResponse) VisitPairResponse(w http.ResponseWriter)
 	return err
 }
 
+type ListTokensRequestObject struct {
+	Params ListTokensParams
+}
+
+type ListTokensResponseObject interface {
+	VisitListTokensResponse(w http.ResponseWriter) error
+}
+
+type ListTokens200ResponseHeaders struct {
+	XRequestId string
+}
+
+type ListTokens200JSONResponse struct {
+	Body    DeviceTokenPage
+	Headers ListTokens200ResponseHeaders
+}
+
+func (response ListTokens200JSONResponse) VisitListTokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-Id", fmt.Sprint(response.Headers.XRequestId))
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListTokensdefaultJSONResponse struct {
+	Body       Error
+	Headers    ErrorResponseHeaders
+	StatusCode int
+}
+
+func (response ListTokensdefaultJSONResponse) VisitListTokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-Id", fmt.Sprint(response.Headers.XRequestId))
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeOwnTokenRequestObject struct {
+	Params RevokeOwnTokenParams
+}
+
+type RevokeOwnTokenResponseObject interface {
+	VisitRevokeOwnTokenResponse(w http.ResponseWriter) error
+}
+
+type RevokeOwnToken204Response = NoContentResponse
+
+func (response RevokeOwnToken204Response) VisitRevokeOwnTokenResponse(w http.ResponseWriter) error {
+	w.Header().Set("X-Request-Id", fmt.Sprint(response.Headers.XRequestId))
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeOwnTokendefaultJSONResponse struct {
+	Body       Error
+	Headers    ErrorResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeOwnTokendefaultJSONResponse) VisitRevokeOwnTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-Id", fmt.Sprint(response.Headers.XRequestId))
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeTokenRequestObject struct {
+	Id     string `json:"id"`
+	Params RevokeTokenParams
+}
+
+type RevokeTokenResponseObject interface {
+	VisitRevokeTokenResponse(w http.ResponseWriter) error
+}
+
+type RevokeToken204Response = NoContentResponse
+
+func (response RevokeToken204Response) VisitRevokeTokenResponse(w http.ResponseWriter) error {
+	w.Header().Set("X-Request-Id", fmt.Sprint(response.Headers.XRequestId))
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeTokendefaultJSONResponse struct {
+	Body       Error
+	Headers    ErrorResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeTokendefaultJSONResponse) VisitRevokeTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-Id", fmt.Sprint(response.Headers.XRequestId))
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ConnectWebSocketRequestObject struct {
 }
 
@@ -666,6 +1004,15 @@ type StrictServerInterface interface {
 	// Pair Exchange a one-time pairing code for a device token
 	// (POST /v1/pair)
 	Pair(ctx context.Context, request PairRequestObject) (PairResponseObject, error)
+	// ListTokens Device tokens of this agent that are not revoked, oldest first
+	// (GET /v1/tokens)
+	ListTokens(ctx context.Context, request ListTokensRequestObject) (ListTokensResponseObject, error)
+	// RevokeOwnToken Revoke the token of this request; the device stops being paired
+	// (DELETE /v1/tokens/self)
+	RevokeOwnToken(ctx context.Context, request RevokeOwnTokenRequestObject) (RevokeOwnTokenResponseObject, error)
+	// RevokeToken Revoke the token of another device
+	// (DELETE /v1/tokens/{id})
+	RevokeToken(ctx context.Context, request RevokeTokenRequestObject) (RevokeTokenResponseObject, error)
 	// ConnectWebSocket WebSocket upgrade; messages are WsEnvelope
 	// (GET /v1/ws)
 	ConnectWebSocket(ctx context.Context, request ConnectWebSocketRequestObject) (ConnectWebSocketResponseObject, error)
@@ -789,6 +1136,85 @@ func (sh *strictHandler) Pair(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListTokens operation middleware
+func (sh *strictHandler) ListTokens(w http.ResponseWriter, r *http.Request, params ListTokensParams) {
+	var request ListTokensRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListTokens(ctx, request.(ListTokensRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListTokens")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListTokensResponseObject); ok {
+		if err := validResponse.VisitListTokensResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeOwnToken operation middleware
+func (sh *strictHandler) RevokeOwnToken(w http.ResponseWriter, r *http.Request, params RevokeOwnTokenParams) {
+	var request RevokeOwnTokenRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeOwnToken(ctx, request.(RevokeOwnTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeOwnToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeOwnTokenResponseObject); ok {
+		if err := validResponse.VisitRevokeOwnTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeToken operation middleware
+func (sh *strictHandler) RevokeToken(w http.ResponseWriter, r *http.Request, id string, params RevokeTokenParams) {
+	var request RevokeTokenRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeToken(ctx, request.(RevokeTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeTokenResponseObject); ok {
+		if err := validResponse.VisitRevokeTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ConnectWebSocket operation middleware
 func (sh *strictHandler) ConnectWebSocket(w http.ResponseWriter, r *http.Request) {
 	var request ConnectWebSocketRequestObject
@@ -818,35 +1244,45 @@ func (sh *strictHandler) ConnectWebSocket(w http.ResponseWriter, r *http.Request
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"3FrrTyS5Ef9XLCcfmxm4Qxdp+MRxexeUu120sNlICCFPu2baS7dt/BiYoPnfo7Ld7x4euV1llU9M+1FV",
+	"/lW5XuaJ5qrSSoJ0li6eaAGMgwk///UR7j1Yd87xi4PNjdBOKEkXNE0RwUE6sRJgMqINWJCOKElgA2ZL",
+	"DFitpIUZzaiBey8McLpwxkNGbV5AxZCw22qgC2qdEXJNd7tdRjUzrAKX5DjzxiozluGDZvceToiERxfX",
+	"ELUirgCUZCOUt0SzdeAucP29B7OlGZWsQoZ5JPucKBk951Bp5UDm23/AdizDp0/nv5DNcUaUBKLBEG/B",
+	"ECEdSJcRA94C7wLizLaRJ0LdCtThdYDMngNtpUzFHF1Q7wWn2YTkv4tKOFw6dfYyTHYJclgxXzq6ODo8",
+	"zGjFHkXlq/CFn0Kmz4YTHnENJuqrVnRQ1ztjorZyFWDAn0zrUuQMQZt/sYjcU4f3Xw2s6IL+Zd6a4jzO",
+	"2nmkFrj0kY8TWc9gD5JZHkSTnaKbls87xh2Iv1dnrbh9Tr8oCV+L0a7GPNA5XYN0vwJz3gB+g0SQr2mh",
+	"rLutwBmRW5pRbdQXyB3+5Cq/CzZjt9ZBharX1Q80o1+UN5KVOFAI61TQNsvxCIGEtwW9GdlJFkU4lyuF",
+	"/LVRGowTUZEMp/4JxoqosD4qYSOxUG3AzOgEZabF3s1nygDZxNnO5saoMrqKqARBhIPKvmQoPSx3DUlm",
+	"DNviN2Iarf9pLGsl5FkpQLrTntAjW+9eyes+QL0DT1PsCNE5YKsVtUQ1ozy/wEbkcKXuQI71khtgDvip",
+	"6zkCzhwcOBFoj86Xe2MmbfuqAOKQTe06TXLsrmCOlMI6G4bDGttR1VKpEpik4V6isO/3YSv45HDJrPtk",
+	"X3GM63pTRqUvS3ozVENwgB0hsg5CPT4tDi9gfsHWMMa9McNX2WNXhRPm2AatFp2XTxoY9zZPnaTxwAO7",
+	"URxe5W7PcGFQrGOijL6Ac4Emw8qLDs0YlUb8K7A2Idi3tl+VIaVaW8IkJxyWfr0Wcp0RqRxZKUO4sLpk",
+	"W+JUMDqMpZOuxXQTk3Ho60IWDt2K1N27F7qzBNTAZ5UKgzn66IzAowPJgROmNUh+oGS5JQ/CFYTVfo0s",
+	"faVR/NqrC7lhpeC3SQKaUS+Zd4Uy4t+ANrxSZik4B/QUUrnblfISx3MlV6XIcYdoc4TbznB09Le4iZWl",
+	"egjkvLRea2Vc/NLWGWDVrZdsw0TJlmWAgzm4DelAWIWuDuMIhgwmENFbRPAWHnVAdDCM6c1kWPm7su6P",
+	"FMDGhqj9lHUmbz+OBUI9MOE+YvrQ9xXKx0PU10f6ahkzqnh9MqrBYKxp9jZXdx+RmsbElbUOWPlfSeHR",
+	"9pqdfbO6LJiB4H2VYyXBCEFyplku3DYjh7PZ0SyaxvPiDsy+wzFL0N5M3tQKM4Vx6K8t5Oetgz5eQrqf",
+	"jidDds7yAvhLO66bLR2AwtnfwgsNr1nfBzTieECaM/Tw20dygF9HoC6zbIjMFKjOvjYwD5kiA7wcjWKm",
+	"yF8wYVJOud/Hjy5kP0hX7PF3kGtX0MVPx9nrXGiHwn6xYh0wlsvVqcxIsDDzGk8eSbQbpoT4bN/JDZRK",
+	"T4ig2bZUbKKWvQyxj3BAT26xWkO6IUY5pUU+C5cf7icqUPT6IlR30oUNa6afMbc9tq9F/lwS8BaLqgee",
+	"j/Kf7R8xHl7h4hHQOBiYTkP8G9MX+7BME+jPGIJBUuCdxTKmow5ulNYwQeJ98GhIIcBqSVpJVkZVIS+w",
+	"ftlsIEu/WsU04a13vJZg+pRdhDqlWeK9hBRg26/mN0bJIDrN6Jpp/Eq1qo561Sr8gbxQk8Hzs72sab0O",
+	"6Ib1frhDS+XtqZzZ3wKK5c1BXigLkgieES/FvY9tkFxJCSEpmZHzukdkR9qbvegTn0/XOkjxN0LF92P1",
+	"hvTyJfE+tSbyKvkk6RjVKyXsU2um6opuRI4sQcg1yZnMoSyB/zklBN+YeyPcNjjSKOASmAFz6jHCpFZP",
+	"qBrDcMuvcE7H/otILYhBm/Hd5VXwq59heanyO3BoWc6w3JEluAcAGc544UsLRHy4xHw8bNA4chAq9HA+",
+	"4UpkGBfG3sXpxTnN6KYu9+mPqDKlQTIt8HN2NDsMCa8rwpnmm6N5LeYaQvBFnYSuFmqC/gaxkzJoiP1w",
+	"ePjV2mFtu2aiJRaPJaIIX6kv1vQFp7c1B20ada050MX1DbrFqmKYYybxEt42I3UzJOirKVVI0xhBWoh5",
+	"aoTNcf1z2Kd6A0uPb6mCbmkzoQScJm3v7n+ohgb4s9j1iLVFEo1YybQtlGtgxsIuRIoE88C20DPdSfUg",
+	"CeaDRFhyfHhEuhXsCbqvVCgSFVrhPPTFce3RYSyPp6pKXDwqK/HW9lWMGWZbwP+s+Par6bSbU+/63g8D",
+	"4+4bmlMvb56wp9hHInX2+/1d63ePecHkGghDZYe8tNZmNJWVMgTT6845apuLbcW9l/p3Yd1VXNJ/FLqe",
+	"FrtdMo/PH7vsxYWpj7a7+YY6HrYWp3x3eKvCmN0F6nvxIF0jtDGxEJaE6Bo7xcxA6OIZ2Kg74BlRJQfr",
+	"yEoY6wbqnlsoV9HDlOAmOm2n8aGMsJUDQ6zPc7CWVADOElazSG3rUHThxNAbZeShEHkR0oM8pKrEGWBI",
+	"whKuJIwdzMdA+cODvEqX7W0mN3grnLCo45fRb9+h/qzO4mna7n2jtuRAT8JUsjbrlLYpMcTLC3yotCfB",
+	"d88pLbDD7UwSVhpgfDtQVVAkcHsS09wYTASPoeSYNB3PfYrZo5XwvolJWvu8GV4EXv/inP0/qJZJ5Qow",
+	"SaGN9h72e9ezWKM1qfUwaTo6PJpoljwIlxfBTIxyKlfl9+Kj2hLB67VhHE7qgscG99TpDe0G8axfr1zf",
+	"oH4tmE1tYt6UqVixi/n8CfOo3eIJ89UdVhDMCLYsI2hFkz2lo9BS5awMwzss/c1g+m/Hxz+iQDcZfTx4",
+	"sAehHRTZDh6880KlEjr5s9TRIkuW353EdMspTLDFahtLvzu8rLHMrhsA0pdl1jbDKJNb2jShaHiUmYXO",
+	"BF6L/altkz+mf22wkKt4dfcx6ubNLcNEbhYButn9JwAA//8=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

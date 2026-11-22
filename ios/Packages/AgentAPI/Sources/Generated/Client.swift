@@ -131,6 +131,8 @@ public struct Client: APIProtocol {
     }
     /// Exchange a one-time pairing code for a device token
     ///
+    /// An unknown code is 401 unauthorized; an expired or used one is 410 with pairing_code_expired or pairing_code_used.
+    ///
     /// - Remark: HTTP `POST /v1/pair`.
     /// - Remark: Generated from `#/paths//v1/pair/post(pair)`.
     public func pair(_ input: Operations.Pair.Input) async throws -> Operations.Pair.Output {
@@ -357,6 +359,269 @@ public struct Client: APIProtocol {
                         as: Components.Headers.XRequestId.self
                     ))
                     return .switchingProtocols(.init(headers: headers))
+                default:
+                    let headers: Components.Responses._Error.Headers = .init(xRequestId: try converter.getRequiredHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "X-Request-Id",
+                        as: Components.Headers.XRequestId.self
+                    ))
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas._Error.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(
+                            headers: headers,
+                            body: body
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Device tokens of this agent that are not revoked, oldest first
+    ///
+    /// - Remark: HTTP `GET /v1/tokens`.
+    /// - Remark: Generated from `#/paths//v1/tokens/get(listTokens)`.
+    public func listTokens(_ input: Operations.ListTokens.Input) async throws -> Operations.ListTokens.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ListTokens.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/tokens",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "limit",
+                    value: input.query.limit
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "cursor",
+                    value: input.query.cursor
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let headers: Operations.ListTokens.Output.Ok.Headers = .init(xRequestId: try converter.getRequiredHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "X-Request-Id",
+                        as: Components.Headers.XRequestId.self
+                    ))
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ListTokens.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.DeviceTokenPage.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(
+                        headers: headers,
+                        body: body
+                    ))
+                default:
+                    let headers: Components.Responses._Error.Headers = .init(xRequestId: try converter.getRequiredHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "X-Request-Id",
+                        as: Components.Headers.XRequestId.self
+                    ))
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas._Error.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(
+                            headers: headers,
+                            body: body
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Revoke the token of this request; the device stops being paired
+    ///
+    /// A retry after success meets a revoked token and gets 401 unauthorized, which the client treats as done.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tokens/self`.
+    /// - Remark: Generated from `#/paths//v1/tokens/self/delete(revokeOwnToken)`.
+    public func revokeOwnToken(_ input: Operations.RevokeOwnToken.Input) async throws -> Operations.RevokeOwnToken.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.RevokeOwnToken.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/tokens/self",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setHeaderFieldAsURI(
+                    in: &request.headerFields,
+                    name: "Idempotency-Key",
+                    value: input.headers.idempotencyKey
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    let headers: Components.Responses.NoContent.Headers = .init(xRequestId: try converter.getRequiredHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "X-Request-Id",
+                        as: Components.Headers.XRequestId.self
+                    ))
+                    return .noContent(.init(headers: headers))
+                default:
+                    let headers: Components.Responses._Error.Headers = .init(xRequestId: try converter.getRequiredHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "X-Request-Id",
+                        as: Components.Headers.XRequestId.self
+                    ))
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas._Error.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(
+                            headers: headers,
+                            body: body
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Revoke the token of another device
+    ///
+    /// Revoking an already revoked token succeeds; an unknown id is 404 not_found.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tokens/{id}`.
+    /// - Remark: Generated from `#/paths//v1/tokens/{id}/delete(revokeToken)`.
+    public func revokeToken(_ input: Operations.RevokeToken.Input) async throws -> Operations.RevokeToken.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.RevokeToken.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/tokens/{}",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setHeaderFieldAsURI(
+                    in: &request.headerFields,
+                    name: "Idempotency-Key",
+                    value: input.headers.idempotencyKey
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    let headers: Components.Responses.NoContent.Headers = .init(xRequestId: try converter.getRequiredHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "X-Request-Id",
+                        as: Components.Headers.XRequestId.self
+                    ))
+                    return .noContent(.init(headers: headers))
                 default:
                     let headers: Components.Responses._Error.Headers = .init(xRequestId: try converter.getRequiredHeaderFieldAsURI(
                         in: response.headerFields,
