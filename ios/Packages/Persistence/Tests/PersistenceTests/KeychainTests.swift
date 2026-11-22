@@ -10,6 +10,7 @@ import Testing
         #expect(KeychainAccount.token(id).rawValue == "token.6F1C2A4E-0000-4000-8000-000000000001")
         #expect(KeychainAccount.spki(id).rawValue == "spki.6F1C2A4E-0000-4000-8000-000000000001")
         #expect(KeychainAccount.sshKey(id).rawValue == "ssh.key.6F1C2A4E-0000-4000-8000-000000000001")
+        #expect(KeychainAccount.sshHostKey(id).rawValue == "ssh.hostkey.6F1C2A4E-0000-4000-8000-000000000001")
     }
 
     @Test func scopesItemsToTheAppServiceWithoutSync() {
