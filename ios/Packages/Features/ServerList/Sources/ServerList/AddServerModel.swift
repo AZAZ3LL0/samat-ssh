@@ -33,6 +33,8 @@ import os
     public private(set) var error: AgentError?
     /// The Keychain or the cache refused to save; nothing was stored.
     public private(set) var saveFailed = false
+    /// The last scanned or opened link is not a `pulse://pair` link from `pulse-agent pair`.
+    public private(set) var invalidLink = false
 
     private let pairing: any AgentPairing
     private let secrets: any SecretStore
@@ -71,6 +73,36 @@ import os
             let probe = try await pairing.probe(endpoint)
             try AgentCompatibility.check(probe.info, requiredApiVersion: Self.requiredApiVersion)
             step = .verify(probe)
+        } catch {
+            self.error = error
+        }
+    }
+
+    /// A scanned QR code or a deep link. The link carries the fingerprint `pulse-agent pair` printed,
+    /// so it replaces the user's manual check; the agent must still present exactly that key.
+    /// Ends on the code step: pairing waits for a tap, so a link from a web page adds nothing by itself.
+    public func open(_ url: URL) async {
+        guard !isWorking else { return }
+        error = nil
+        saveFailed = false
+        guard let link = PairingLink(url: url) else {
+            invalidLink = true
+            return
+        }
+        invalidLink = false
+        host = link.host
+        port = String(link.port)
+        code = ""
+        step = .address
+        isWorking = true
+        defer { isWorking = false }
+        do throws(AgentError) {
+            let probe = try await pairing.probe(link.endpoint)
+            guard probe.fingerprint == link.fingerprint else { throw .pinMismatch }
+            try AgentCompatibility.check(probe.info, requiredApiVersion: Self.requiredApiVersion)
+            code = link.code
+            step = .verify(probe)
+            confirmFingerprint()
         } catch {
             self.error = error
         }
@@ -165,7 +197,7 @@ import os
     }
 
     /// A DNS name, IPv4 or IPv6 address; IPv6 comes back in brackets, the form URLs and records use.
-    static func normalizedHost(_ raw: String) -> String? {
+    nonisolated static func normalizedHost(_ raw: String) -> String? {
         let host = raw.trimmingCharacters(in: .whitespaces)
         if host.contains(":") {
             let bare = host.hasPrefix("[") && host.hasSuffix("]") ? String(host.dropFirst().dropLast()) : host
