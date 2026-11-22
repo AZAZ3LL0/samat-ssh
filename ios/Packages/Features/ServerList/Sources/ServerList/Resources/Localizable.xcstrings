@@ -11,12 +11,32 @@
         }
       }
     },
+    "A key login needs passwordless sudo. Log in with the password instead." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для входа по ключу нужен sudo без пароля. Войдите по паролю."
+          }
+        }
+      }
+    },
     "Add server" : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить сервер"
+          }
+        }
+      }
+    },
+    "Adding the key…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавление ключа…"
           }
         }
       }
@@ -51,6 +71,16 @@
         }
       }
     },
+    "Architecture" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Архитектура"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "localizations" : {
         "ru" : {
@@ -61,12 +91,32 @@
         }
       }
     },
+    "Checking the server…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверка сервера…"
+          }
+        }
+      }
+    },
     "Connect" : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подключиться"
+          }
+        }
+      }
+    },
+    "Connecting…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение…"
           }
         }
       }
@@ -91,6 +141,16 @@
         }
       }
     },
+    "Host key" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ключ хоста"
+          }
+        }
+      }
+    },
     "Host or IP address" : {
       "localizations" : {
         "ru" : {
@@ -107,6 +167,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Имя хоста"
+          }
+        }
+      }
+    },
+    "Install" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установить"
+          }
+        }
+      }
+    },
+    "Install failed: %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установка не удалась: %@"
+          }
+        }
+      }
+    },
+    "Install over SSH" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установить по SSH"
+          }
+        }
+      }
+    },
+    "Installing…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установка…"
+          }
+        }
+      }
+    },
+    "Installs the latest pulse-agent release, adds this app's key to authorized_keys and pairs with the agent." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Устанавливает последний релиз pulse-agent, добавляет ключ приложения в authorized_keys и выполняет pairing с агентом."
+          }
+        }
+      }
+    },
+    "Key passphrase" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароль ключа"
+          }
+        }
+      }
+    },
+    "Key type" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тип ключа"
           }
         }
       }
@@ -131,6 +261,16 @@
         }
       }
     },
+    "Or paste a private key" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Или вставьте приватный ключ"
+          }
+        }
+      }
+    },
     "Pair" : {
       "localizations" : {
         "ru" : {
@@ -151,12 +291,52 @@
         }
       }
     },
+    "Pairing…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pairing…"
+          }
+        }
+      }
+    },
+    "Password" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароль"
+          }
+        }
+      }
+    },
     "Port" : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Порт"
+          }
+        }
+      }
+    },
+    "Pulse supports Ubuntu 22.04, 24.04 and Debian 12. The agent may work here, without guarantees." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulse поддерживает Ubuntu 22.04, 24.04 и Debian 12. Здесь агент может работать, но без гарантий."
+          }
+        }
+      }
+    },
+    "Run ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub on the server. Go on only if the fingerprint is exactly the same." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполните на сервере ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub. Продолжайте, только если отпечаток точно совпадает."
           }
         }
       }
@@ -171,12 +351,42 @@
         }
       }
     },
+    "Runs as" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запуск от"
+          }
+        }
+      }
+    },
+    "SSH port" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Порт SSH"
+          }
+        }
+      }
+    },
     "Scan QR code" : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сканировать QR-код"
+          }
+        }
+      }
+    },
+    "System" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Система"
           }
         }
       }
@@ -211,12 +421,82 @@
         }
       }
     },
+    "The connection dropped. Try again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Соединение оборвалось. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "The password or key is used once for this install and never saved. The app then logs in with its own key." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароль или ключ используется один раз для установки и не сохраняется. Дальше приложение входит своим ключом."
+          }
+        }
+      }
+    },
+    "The private key cannot be read, or the passphrase is wrong." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приватный ключ не читается или пароль ключа неверен."
+          }
+        }
+      }
+    },
+    "The server did not answer in time." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер не ответил вовремя."
+          }
+        }
+      }
+    },
+    "The server does not answer on this port." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер не отвечает на этом порту."
+          }
+        }
+      }
+    },
     "The server paired, but the app could not save it. Try again." : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сервер привязан, но приложение не смогло его сохранить. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "The server presented another host key. Start over." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер предъявил другой ключ хоста. Начните заново."
+          }
+        }
+      }
+    },
+    "The server refused the user, password or key." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер отклонил пользователя, пароль или ключ."
           }
         }
       }
@@ -237,6 +517,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Это не ссылка привязки из pulse-agent pair."
+          }
+        }
+      }
+    },
+    "User" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пользователь"
+          }
+        }
+      }
+    },
+    "pulse-agent has no build for %@." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У pulse-agent нет сборки для %@."
+          }
+        }
+      }
+    },
+    "pulse-agent pair printed something unexpected. Update the agent." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pulse-agent pair вывел неожиданный ответ. Обновите агента."
+          }
+        }
+      }
+    },
+    "sudo refused the password. The user needs sudo rights." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sudo отклонил пароль. Пользователю нужны права sudo."
           }
         }
       }
