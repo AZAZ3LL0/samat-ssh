@@ -108,6 +108,16 @@ import os
         }
     }
 
+    /// The text of a scanned QR code; one that is not a URL is no pairing link either.
+    public func openScanned(_ payload: String) async {
+        guard let url = URL(string: payload.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            error = nil
+            invalidLink = true
+            return
+        }
+        await open(url)
+    }
+
     public func confirmFingerprint() {
         guard case .verify(let probe) = step else { return }
         if name.trimmingCharacters(in: .whitespaces).isEmpty {

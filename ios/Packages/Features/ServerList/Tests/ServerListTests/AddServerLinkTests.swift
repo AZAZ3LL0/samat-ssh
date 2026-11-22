@@ -49,8 +49,9 @@ import Testing
         let record = try #require(try records().first)
         #expect(model.step == .paired(record.id))
         #expect(record.port == 8443)
-        #expect(secrets.read(.spki(record.id)).flatMap { String(data: $0, encoding: .utf8) }
-            == FakeAgentPairing.fingerprint)
+        #expect(
+            secrets.read(.spki(record.id)).flatMap { String(data: $0, encoding: .utf8) }
+                == FakeAgentPairing.fingerprint)
     }
 
     @Test func agentWithAnotherKeyIsRefused() async throws {
@@ -69,6 +70,23 @@ import Testing
         #expect(model.step == .address)
         #expect(model.error == nil)
         #expect(model.host.isEmpty)
+    }
+
+    @Test(arguments: ["hello world", "https://example.com", ""])
+    func foreignQRCodeIsInvalidLink(payload: String) async {
+        let model = model()
+        await model.openScanned(payload)
+        #expect(model.invalidLink)
+        #expect(model.step == .address)
+    }
+
+    @Test func scannedLinkOpensLikeDeepLink() async throws {
+        let model = model()
+        await model.openScanned(" \(try url().absoluteString)\n")
+        guard case .code = model.step else {
+            Issue.record("expected the code step, got \(model.step)")
+            return
+        }
     }
 
     @Test func unreachableAgentKeepsAddressForRetry() async throws {

@@ -6,11 +6,15 @@ import SwiftUI
 /// Sheet that adds a server by host and port. `onPaired` gets the id of the saved server.
 public struct AddServerView: View {
     @State private var model: AddServerModel
+    @State private var isScanning = false
     @Environment(\.dismiss) private var dismiss
+    private let link: URL?
     private let onPaired: (UUID) -> Void
 
-    public init(model: AddServerModel, onPaired: @escaping (UUID) -> Void) {
+    /// - Parameter link: a `pulse://pair` deep link to open right away.
+    public init(model: AddServerModel, link: URL? = nil, onPaired: @escaping (UUID) -> Void) {
         _model = State(initialValue: model)
+        self.link = link
         self.onPaired = onPaired
     }
 
@@ -39,6 +43,15 @@ public struct AddServerView: View {
                     Button(String(localized: "Cancel", bundle: .module)) { dismiss() }
                 }
             }
+            .task(id: link) {
+                if let link { await model.open(link) }
+            }
+            .sheet(isPresented: $isScanning) {
+                PairingScannerView { payload in
+                    isScanning = false
+                    Task { await model.openScanned(payload) }
+                }
+            }
             .onChange(of: model.step) { _, step in
                 if case .paired(let id) = step {
                     onPaired(id)
@@ -59,6 +72,10 @@ public struct AddServerView: View {
             TextField(String(localized: "Port", bundle: .module), text: $model.port)
                 .keyboardType(.numberPad)
                 .accessibilityIdentifier("addServer.port")
+            if model.invalidLink {
+                Text("This is not a pairing link from pulse-agent pair.", bundle: .module)
+                    .foregroundStyle(DS.Palette.critical)
+            }
             if let error = model.error {
                 ErrorBanner(error: error)
             }
@@ -66,6 +83,11 @@ public struct AddServerView: View {
                 await model.connect()
             }
             .accessibilityIdentifier("addServer.connect")
+            if PairingScannerView.isSupported {
+                Button(String(localized: "Scan QR code", bundle: .module), systemImage: "qrcode.viewfinder") {
+                    isScanning = true
+                }
+            }
         } footer: {
             Text("The agent listens on port 7443 unless its config.yaml says otherwise.", bundle: .module)
         }
@@ -104,6 +126,8 @@ public struct AddServerView: View {
 
     private func codeSection(_ probe: AgentProbe) -> some View {
         Section {
+            // A deep link fills everything in; the address shows which server the tap pairs with.
+            LabeledContent(String(localized: "Address", bundle: .module), value: model.host)
             TextField(String(localized: "Name", bundle: .module), text: $model.name, prompt: Text(probe.info.hostname))
                 .accessibilityIdentifier("addServer.name")
             TextField(String(localized: "Pairing code", bundle: .module), text: $model.code)

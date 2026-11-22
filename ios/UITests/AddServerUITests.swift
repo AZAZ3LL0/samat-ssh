@@ -1,6 +1,6 @@
 import XCTest
 
-/// S1.1 in demo mode: add a server by address, check the fingerprint, pair with the code.
+/// S1.1 and S1.2 in demo mode: add a server by address or by a `pulse://pair` link.
 @MainActor final class AddServerUITests: XCTestCase {
     /// `FakeAgentPairing.fingerprint` and `FakeAgentClient.pairingCode`; UI tests cannot import AgentKit.
     private let fingerprint = "F0sRU55fRw86KcEnEi8xyNqveEHDm5UWO5HH3sx8F_E"
@@ -45,6 +45,24 @@ import XCTest
         app.buttons["addServer.pair"].tap()
 
         // The sheet closes and the new server, named after the agent's hostname, opens.
+        XCTAssertTrue(app.tabBars.firstMatch.buttons["Overview"].waitForExistence(timeout: 10))
+    }
+
+    /// The QR code holds the same link; the camera is unavailable in the simulator, so the test opens it.
+    func testPairingLinkAddsServerAfterOneTap() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-PulseDemo", "YES", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Add server"].waitForExistence(timeout: 10))
+
+        let link = try XCTUnwrap(URL(string: "pulse://pair?h=qr.local&p=7443&fp=\(fingerprint)&c=\(pairingCode)"))
+        app.open(link)
+
+        let pair = app.buttons["addServer.pair"]
+        XCTAssertTrue(pair.waitForExistence(timeout: 10))
+        XCTAssertEqual(app.textFields["addServer.code"].value as? String, pairingCode)
+        pair.tap()
+
         XCTAssertTrue(app.tabBars.firstMatch.buttons["Overview"].waitForExistence(timeout: 10))
     }
 }

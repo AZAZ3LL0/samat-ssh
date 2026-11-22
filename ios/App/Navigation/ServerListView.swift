@@ -12,6 +12,8 @@ struct ServerListView: View {
     @Query private var settings: [AppSettings]
     @State private var selection: ServerEntry.ID?
     @State private var isAddingServer = false
+    /// A `pulse://pair` link the system opened the app with; the add sheet starts from it.
+    @State private var pairingLink: URL?
 
     private var entries: [ServerEntry] {
         ServerDirectory.entries(records: records, demoEnabled: environment.isDemoEnabled(settings: settings.first))
@@ -44,11 +46,7 @@ struct ServerListView: View {
                     ToolbarItem(placement: .topBarTrailing) { DebugMenu() }
                 #endif
             }
-            .sheet(isPresented: $isAddingServer) {
-                AddServerView(model: environment.makeAddServerModel(deviceName: UIDevice.current.name)) { id in
-                    selection = id
-                }
-            }
+            .sheet(isPresented: $isAddingServer, onDismiss: { pairingLink = nil }, content: addServerSheet)
         } detail: {
             if let entry = entries.first(where: { $0.id == selection }) {
                 NavigationStack {
@@ -62,8 +60,20 @@ struct ServerListView: View {
         .onAppear {
             selection = settings.first?.lastSelectedServerId
         }
+        .onOpenURL { url in
+            pairingLink = url
+            isAddingServer = true
+        }
         .onChange(of: selection) { _, id in
             try? AppSettings.current(in: modelContext).lastSelectedServerId = id
+        }
+    }
+
+    private func addServerSheet() -> some View {
+        AddServerView(
+            model: environment.makeAddServerModel(deviceName: UIDevice.current.name), link: pairingLink
+        ) { id in
+            selection = id
         }
     }
 
