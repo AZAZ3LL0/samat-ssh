@@ -28,8 +28,13 @@ const (
 )
 
 var (
-	// ErrInvalidCode reports a pairing code that is unknown, expired or already used.
+	// ErrInvalidCode reports a pairing code that cannot pair. Unknown codes
+	// return it as is; expired and used codes return the errors below, which wrap it.
 	ErrInvalidCode = errors.New("auth: invalid pairing code")
+	// ErrCodeExpired reports a pairing code whose ten minutes are over.
+	ErrCodeExpired = fmt.Errorf("%w: expired", ErrInvalidCode)
+	// ErrCodeUsed reports a pairing code that already paired a device.
+	ErrCodeUsed = fmt.Errorf("%w: already used", ErrInvalidCode)
 	// ErrInvalidToken reports a token that is unknown or revoked.
 	ErrInvalidToken = errors.New("auth: invalid token")
 	// ErrTokenNotFound reports a revocation of an unknown or already revoked token.
@@ -79,7 +84,12 @@ func (s *Service) Pair(ctx context.Context, code, deviceName string) (token, tok
 	// Codes are typed by hand in the manual flow, so case and stray spaces are forgiven.
 	normalized := strings.ToUpper(strings.TrimSpace(code))
 	err = s.store.PairDevice(ctx, hash(normalized), tokenID, deviceName, hash(token), s.now())
-	if errors.Is(err, store.ErrPairingCodeInvalid) {
+	switch {
+	case errors.Is(err, store.ErrPairingCodeUsed):
+		return "", "", ErrCodeUsed
+	case errors.Is(err, store.ErrPairingCodeExpired):
+		return "", "", ErrCodeExpired
+	case errors.Is(err, store.ErrPairingCodeInvalid):
 		return "", "", ErrInvalidCode
 	}
 	if err != nil {

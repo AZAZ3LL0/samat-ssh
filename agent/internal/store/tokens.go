@@ -8,8 +8,15 @@ import (
 	"time"
 )
 
-// ErrPairingCodeInvalid reports a pairing code that is unknown, expired or already used.
-var ErrPairingCodeInvalid = errors.New("store: pairing code invalid")
+var (
+	// ErrPairingCodeInvalid reports a pairing code that cannot pair: unknown,
+	// expired or already used. The two errors below wrap it.
+	ErrPairingCodeInvalid = errors.New("store: pairing code invalid")
+	// ErrPairingCodeExpired reports a known, unused code past its expiry.
+	ErrPairingCodeExpired = fmt.Errorf("%w: expired", ErrPairingCodeInvalid)
+	// ErrPairingCodeUsed reports a code that already paired a device.
+	ErrPairingCodeUsed = fmt.Errorf("%w: already used", ErrPairingCodeInvalid)
+)
 
 // Token is a device token record. The token itself is never stored, only its hash.
 type Token struct {
@@ -63,7 +70,7 @@ func (s *Store) PairDevice(ctx context.Context, codeHash []byte, tokenID, device
 		return fmt.Errorf("consume pairing code: %w", err)
 	}
 	if consumed == 0 {
-		return ErrPairingCodeInvalid
+		return whyUnusable(ctx, tx, codeHash)
 	}
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO tokens (id, device_name, token_sha256, created_at) VALUES (?, ?, ?, ?)`,
@@ -75,6 +82,23 @@ func (s *Store) PairDevice(ctx context.Context, codeHash []byte, tokenID, device
 		return fmt.Errorf("commit: %w", err)
 	}
 	return nil
+}
+
+// whyUnusable tells an unknown code from an expired or used one. Expired codes
+// are purged when the next code is made, after which they read as unknown.
+func whyUnusable(ctx context.Context, tx *sql.Tx, codeHash []byte) error {
+	var usedAt sql.NullInt64
+	err := tx.QueryRowContext(ctx, `SELECT used_at FROM pairing_codes WHERE code_sha256 = ?`, codeHash).Scan(&usedAt)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return ErrPairingCodeInvalid
+	case err != nil:
+		return fmt.Errorf("read pairing code: %w", err)
+	case usedAt.Valid:
+		return ErrPairingCodeUsed
+	default:
+		return ErrPairingCodeExpired
+	}
 }
 
 // TokenByHash returns the token with the given hash, revoked or not.

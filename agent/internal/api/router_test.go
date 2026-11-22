@@ -202,11 +202,11 @@ func TestPairRejectsBadCodes(t *testing.T) {
 	if response := f.pair(`{"code":"` + used + `","deviceName":"iPhone"}`); response.Code != http.StatusOK {
 		t.Fatalf("first use status = %d", response.Code)
 	}
-	wantError(t, f.pair(`{"code":"`+used+`","deviceName":"iPad"}`), http.StatusUnauthorized, gen.Unauthorized)
+	wantError(t, f.pair(`{"code":"`+used+`","deviceName":"iPad"}`), http.StatusGone, gen.PairingCodeUsed)
 
 	expired := f.code()
 	f.now = f.now.Add(10 * time.Minute)
-	wantError(t, f.pair(`{"code":"`+expired+`","deviceName":"iPhone"}`), http.StatusUnauthorized, gen.Unauthorized)
+	wantError(t, f.pair(`{"code":"`+expired+`","deviceName":"iPhone"}`), http.StatusGone, gen.PairingCodeExpired)
 }
 
 func TestPairRejectsInvalidRequests(t *testing.T) {
