@@ -227,6 +227,16 @@
         }
       }
     },
+    "The pairing code expired. Run pulse-agent pair again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Срок кода истёк. Запустите pulse-agent pair ещё раз."
+          }
+        }
+      }
+    },
     "The request conflicts with the current state of the server." : {
       "localizations" : {
         "ru" : {
@@ -293,6 +303,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "У устройства больше нет доступа. Подключите сервер заново."
+          }
+        }
+      }
+    },
+    "This pairing code was already used. Run pulse-agent pair again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот код уже использован. Запустите pulse-agent pair ещё раз."
           }
         }
       }
