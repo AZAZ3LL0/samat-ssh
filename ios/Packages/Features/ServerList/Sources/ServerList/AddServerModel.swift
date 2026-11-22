@@ -37,15 +37,13 @@ import os
     public private(set) var invalidLink = false
 
     private let pairing: any AgentPairing
-    private let secrets: any SecretStore
-    private let context: ModelContext
+    private let saver: ServerSaver
     private let deviceName: String
     private let logger = Logger(subsystem: "dev.azaz3ll0.pulse", category: "servers")
 
     public init(pairing: any AgentPairing, secrets: any SecretStore, context: ModelContext, deviceName: String) {
         self.pairing = pairing
-        self.secrets = secrets
-        self.context = context
+        saver = ServerSaver(secrets: secrets, context: context)
         self.deviceName = String(deviceName.prefix(Self.deviceNameLimit))
     }
 
@@ -151,54 +149,18 @@ import os
             return
         }
         do {
-            step = .paired(try save(probe: probe, host: host, port: endpoint.port ?? Self.defaultPort, token: response))
+            let id = try saver.save(
+                host: host, port: endpoint.port ?? Self.defaultPort, name: name, probe: probe, token: response)
+            step = .paired(id)
         } catch {
             logger.error("cannot save paired server: \(String(describing: error), privacy: .public)")
             saveFailed = true
         }
     }
 
-    /// Secrets first, record last: `AppEnvironment` reads secrets only for an existing record.
-    private func save(probe: AgentProbe, host: String, port: Int, token: PairResponse) throws -> UUID {
-        let existing = existingRecord()
-        let id = existing?.id ?? UUID()
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        do {
-            try secrets.write(Data(probe.fingerprint.utf8), for: .spki(id))
-            try secrets.write(Data(token.token.utf8), for: .token(id))
-            let record: ServerRecord
-            if let existing {
-                record = existing
-            } else {
-                record = ServerRecord(id: id, name: "", host: host, port: port, sortOrder: try nextSortOrder())
-            }
-            record.name = trimmedName.isEmpty ? probe.info.hostname : trimmedName
-            record.lastSeenAt = .now
-            record.lastApiVersion = probe.info.apiVersion
-            if existing == nil { context.insert(record) }
-            try context.save()
-            return id
-        } catch {
-            // A re-paired server keeps the new secrets: the old token and pin no longer work anyway.
-            if existing == nil {
-                try? secrets.delete(.spki(id))
-                try? secrets.delete(.token(id))
-            }
-            context.rollback()
-            throw error
-        }
-    }
-
     private func existingRecord() -> ServerRecord? {
         guard let host = Self.normalizedHost(host), let port = Int(port) else { return nil }
-        let descriptor = FetchDescriptor<ServerRecord>(predicate: #Predicate { $0.host == host && $0.port == port })
-        return try? context.fetch(descriptor).first
-    }
-
-    private func nextSortOrder() throws -> Int {
-        var descriptor = FetchDescriptor<ServerRecord>(sortBy: [SortDescriptor(\.sortOrder, order: .reverse)])
-        descriptor.fetchLimit = 1
-        return (try context.fetch(descriptor).first?.sortOrder ?? -1) + 1
+        return saver.record(host: host, port: port)
     }
 
     /// The agent ignores case and spaces of a typed code; codes never contain spaces.
