@@ -14,12 +14,15 @@ import SwiftData
     let launchedInDemo: Bool
     /// A forced demo pairs with the fake agent at any address, so adding a server works offline.
     let pairing: any AgentPairing
+    /// A forced demo installs on a fake server, so "Install over SSH" works offline too.
+    let sshConnector: any SSHConnector
 
     init(container: ModelContainer, secrets: any SecretStore, launchedInDemo: Bool) {
         self.container = container
         self.secrets = secrets
         self.launchedInDemo = launchedInDemo
         self.pairing = launchedInDemo ? FakeAgentPairing() : LiveAgentPairing()
+        self.sshConnector = launchedInDemo ? DemoSSHServer.connector() : LiveSSHConnector()
     }
 
     /// Picks stores for this launch. A forced demo keeps everything in memory, so App Review
@@ -55,5 +58,11 @@ import SwiftData
 
     func makeAddServerModel(deviceName: String) -> AddServerModel {
         AddServerModel(pairing: pairing, secrets: secrets, context: container.mainContext, deviceName: deviceName)
+    }
+
+    func makeSSHInstallModel(deviceName: String) -> SSHInstallModel {
+        SSHInstallModel(
+            connector: sshConnector, pairing: pairing, secrets: secrets, context: container.mainContext,
+            deviceName: deviceName)
     }
 }

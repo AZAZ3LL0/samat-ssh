@@ -71,10 +71,10 @@ struct ServerListView: View {
 
     private func addServerSheet(_ request: AddServerRequest) -> some View {
         AddServerView(
-            model: environment.makeAddServerModel(deviceName: UIDevice.current.name), link: request.link
-        ) { id in
-            selection = id
-        }
+            model: environment.makeAddServerModel(deviceName: UIDevice.current.name), link: request.link,
+            makeSSHInstall: { environment.makeSSHInstallModel(deviceName: UIDevice.current.name) },
+            onPaired: { id in selection = id }
+        )
     }
 
     private func enableDemo() {
