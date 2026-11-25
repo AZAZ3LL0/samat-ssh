@@ -111,6 +111,16 @@
         }
       }
     },
+    "Connecting" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение"
+          }
+        }
+      }
+    },
     "Connecting…" : {
       "localizations" : {
         "ru" : {
@@ -257,6 +267,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Нет доступа к камере"
+          }
+        }
+      }
+    },
+    "Offline" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не в сети"
+          }
+        }
+      }
+    },
+    "Online" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В сети"
           }
         }
       }

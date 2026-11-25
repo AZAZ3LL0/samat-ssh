@@ -28,8 +28,19 @@ public struct ServerRow: View {
                     .frame(width: 64, height: 24)
             }
         }
-        .accessibilityElement(children: .combine)
+        // The name alone is the label, so the row reads and matches like before; status is the value.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(name)
+        .accessibilityValue(statusText)
         .accessibilityIdentifier("serverRow.\(name)")
+    }
+
+    private var statusText: String {
+        switch status.connection {
+        case .connected: String(localized: "Online", bundle: .module)
+        case .offline, .stale: String(localized: "Offline", bundle: .module)
+        case .connecting: String(localized: "Connecting", bundle: .module)
+        }
     }
 }
 

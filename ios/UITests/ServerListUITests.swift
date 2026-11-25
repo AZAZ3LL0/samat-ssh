@@ -34,8 +34,11 @@ import XCTest
                 && app.buttons["server.switcher"].label.hasPrefix("Demo server"))
 
         app.navigationBars.buttons["Servers"].tap()
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "demo, Live")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "the paired server answers and shows as live")
+        let row = app.buttons["demo"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        let online = NSPredicate(format: "value == %@", "Online")
+        expectation(for: online, evaluatedWith: row)
+        waitForExpectations(timeout: 15)
 
         row.swipeLeft()
         app.buttons["Delete"].firstMatch.tap()
@@ -47,7 +50,6 @@ import XCTest
         let gone = NSPredicate(format: "exists == false")
         expectation(for: gone, evaluatedWith: row)
         waitForExpectations(timeout: 10)
-        let demo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Demo server")).firstMatch
-        XCTAssertTrue(demo.exists)
+        XCTAssertTrue(app.buttons["Demo server"].exists)
     }
 }
