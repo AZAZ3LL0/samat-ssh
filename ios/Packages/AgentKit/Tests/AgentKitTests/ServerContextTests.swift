@@ -14,6 +14,8 @@ private struct InfoClient: AgentClient {
 
     func pair(code: String, deviceName: String) async throws(AgentError) -> PairResponse { throw .unreachable }
 
+    func revokeOwnToken(idempotencyKey: UUID) async throws(AgentError) { throw .unreachable }
+
     func subscribe<T: Decodable & Sendable>(_ topic: WsTopic<T>) -> AsyncThrowingStream<WsEvent<T>, any Error> {
         AsyncThrowingStream { $0.finish(throwing: AgentError.unreachable) }
     }

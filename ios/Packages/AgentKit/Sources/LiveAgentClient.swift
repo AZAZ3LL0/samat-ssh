@@ -75,6 +75,23 @@ public final class LiveAgentClient: AgentClient {
         }
     }
 
+    public func revokeOwnToken(idempotencyKey: UUID) async throws(AgentError) {
+        let headers = Operations.RevokeOwnToken.Input.Headers(idempotencyKey: idempotencyKey.uuidString.lowercased())
+        try Self.revokeOutcome(try await call({ try await self.client.revokeOwnToken(headers: headers) }))
+    }
+
+    /// The contract answers a retry after success with 401: the token this request carries is the revoked one.
+    static func revokeOutcome(_ output: Operations.RevokeOwnToken.Output) throws(AgentError) {
+        switch output {
+        case .noContent:
+            return
+        case .default(let status, _) where status == 401:
+            return
+        case .default(let status, let response):
+            throw AgentError(status: status, body: try? response.body.json)
+        }
+    }
+
     /// Reads `GET /v1/info` from an agent whose key is not known yet and returns the key it
     /// presented. Nothing else trusts that key until the user confirms it matches `pulse-agent pair`.
     public static func probe(baseURL: URL) async throws(AgentError) -> AgentProbe {
