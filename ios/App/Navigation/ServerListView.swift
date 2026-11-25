@@ -13,6 +13,8 @@ struct ServerListView: View {
     @State private var selection: ServerEntry.ID?
     /// The open add sheet; `item:` hands it the link, which `isPresented:` would capture stale.
     @State private var addRequest: AddServerRequest?
+    @State private var status: ServerStatusModel?
+    @State private var deletion: ServerDeletion?
 
     private var entries: [ServerEntry] {
         ServerDirectory.entries(records: records, demoEnabled: environment.isDemoEnabled(settings: settings.first))
@@ -20,34 +22,42 @@ struct ServerListView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(entries, selection: $selection) { entry in
-                NavigationLink(value: entry.id) {
-                    Label(entry.name, systemImage: entry.isDemo ? "sparkles" : "server.rack")
+            List(selection: $selection) { rows }
+                .navigationTitle("Servers")
+                .task(id: entries.map(\.id)) {
+                    let status = self.status ?? environment.makeStatusModel()
+                    self.status = status
+                    await status.run(entries.map(\.id))
                 }
-            }
-            .navigationTitle("Servers")
-            .overlay {
-                if entries.isEmpty {
-                    EmptyState(
-                        title: String(localized: "No servers"),
-                        // Release builds have no debug menu: this is the only switch for demo mode there.
-                        message: String(localized: "Add a server with the + button, or try the demo server."),
-                        systemImage: "server.rack",
-                        action: (title: String(localized: "Try demo"), run: enableDemo)
-                    )
+                .serverDeletion($deletion, environment: environment) { id in
+                    status?.remove(id)
+                    if selection == id { selection = nil }
                 }
-            }
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button(String(localized: "Add server"), systemImage: "plus") {
-                        addRequest = AddServerRequest(link: nil)
+                .overlay {
+                    if entries.isEmpty {
+                        EmptyState(
+                            title: String(localized: "No servers"),
+                            // Release builds have no debug menu: this is the only switch for demo mode there.
+                            message: String(localized: "Add a server with the + button, or try the demo server."),
+                            systemImage: "server.rack",
+                            action: (title: String(localized: "Try demo"), run: enableDemo)
+                        )
                     }
                 }
-                #if DEBUG
-                    ToolbarItem(placement: .topBarTrailing) { DebugMenu() }
-                #endif
-            }
-            .sheet(item: $addRequest, content: addServerSheet)
+                .toolbar {
+                    if !records.isEmpty {
+                        ToolbarItem(placement: .topBarLeading) { EditButton() }
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button(String(localized: "Add server"), systemImage: "plus") {
+                            addRequest = AddServerRequest(link: nil)
+                        }
+                    }
+                    #if DEBUG
+                        ToolbarItem(placement: .topBarTrailing) { DebugMenu() }
+                    #endif
+                }
+                .sheet(item: $addRequest, content: addServerSheet)
         } detail: {
             if let entry = entries.first(where: { $0.id == selection }) {
                 NavigationStack {
@@ -66,6 +76,29 @@ struct ServerListView: View {
         }
         .onChange(of: selection) { _, id in
             try? AppSettings.current(in: modelContext).lastSelectedServerId = id
+        }
+    }
+
+    private var rows: some View {
+        ForEach(entries) { entry in
+            NavigationLink(value: entry.id) {
+                ServerRow(name: entry.name, isDemo: entry.isDemo, status: status?.status(for: entry.id) ?? .init())
+            }
+            .moveDisabled(entry.isDemo)
+            .swipeActions {
+                // Neither onDelete nor a destructive role: both make List drop the row at once,
+                // while deletion asks first and may fail, and the mismatch crashes UICollectionView.
+                if !entry.isDemo {
+                    Button(String(localized: "Delete"), systemImage: "trash") {
+                        deletion = ServerDeletion(entry: entry)
+                    }
+                    .tint(DS.Palette.critical)
+                }
+            }
+        }
+        .onMove { source, destination in
+            ServerOrder.move(records, from: source, to: destination)
+            try? modelContext.save()
         }
     }
 
