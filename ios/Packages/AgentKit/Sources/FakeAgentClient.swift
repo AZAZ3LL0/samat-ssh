@@ -49,6 +49,10 @@ public struct FakeAgentClient: AgentClient {
         }
     }
 
+    public func revokeOwnToken(idempotencyKey: UUID) async throws(AgentError) {
+        try await respond { () throws(AgentError) in () }
+    }
+
     public func subscribe<T: Decodable & Sendable>(
         _ topic: WsTopic<T>
     ) -> AsyncThrowingStream<WsEvent<T>, any Error> {

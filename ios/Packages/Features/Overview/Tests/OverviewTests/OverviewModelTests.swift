@@ -215,6 +215,10 @@ private final class FlakyClient: AgentClient, @unchecked Sendable {  // guarded 
         try await healthy.pair(code: code, deviceName: deviceName)
     }
 
+    func revokeOwnToken(idempotencyKey: UUID) async throws(AgentError) {
+        try await healthy.revokeOwnToken(idempotencyKey: idempotencyKey)
+    }
+
     func subscribe<T: Decodable & Sendable>(_ topic: WsTopic<T>) -> AsyncThrowingStream<WsEvent<T>, any Error> {
         healthy.subscribe(topic)
     }

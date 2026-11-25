@@ -8,6 +8,9 @@ public protocol AgentClient: Sendable {
     func hostMetrics() async throws(AgentError) -> HostMetrics
     /// Exchanges a one-time pairing code for a device token, `POST /v1/pair`.
     func pair(code: String, deviceName: String) async throws(AgentError) -> PairResponse
+    /// Revokes this device's token, `DELETE /v1/tokens/self`. Pass one key per user intent and
+    /// reuse it on retries. A retry after success meets the revoked token; that counts as done.
+    func revokeOwnToken(idempotencyKey: UUID) async throws(AgentError)
     /// Events of a topic until the consumer stops iterating. The stream survives
     /// reconnects; it finishes with an `AgentError` only when retrying cannot help.
     func subscribe<T: Decodable & Sendable>(

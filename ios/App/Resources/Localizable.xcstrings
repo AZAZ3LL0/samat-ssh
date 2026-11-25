@@ -41,6 +41,16 @@
         }
       }
     },
+    "Cancel" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена"
+          }
+        }
+      }
+    },
     "Coming soon" : {
       "localizations" : {
         "ru" : {
@@ -57,6 +67,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отладка"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить"
+          }
+        }
+      }
+    },
+    "Delete %@?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить %@?"
+          }
+        }
+      }
+    },
+    "Delete on this device only" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить только на этом устройстве"
           }
         }
       }
@@ -207,6 +247,16 @@
         }
       }
     },
+    "The app revokes its token on the server and forgets the server on this device." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приложение отзовёт свой токен на сервере и забудет сервер на этом устройстве."
+          }
+        }
+      }
+    },
     "The local cache is damaged. Reinstall the app to reset it." : {
       "localizations" : {
         "ru" : {
@@ -217,12 +267,42 @@
         }
       }
     },
+    "The server did not revoke the token" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер не отозвал токен"
+          }
+        }
+      }
+    },
+    "The token stays valid until you revoke it from another device or with pulse-agent tokens revoke." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Токен останется действительным, пока вы не отзовёте его с другого устройства или командой pulse-agent tokens revoke."
+          }
+        }
+      }
+    },
     "This tab arrives in a later update." : {
       "localizations" : {
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Эта вкладка появится в следующем обновлении."
+          }
+        }
+      }
+    },
+    "Try again" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторить"
           }
         }
       }

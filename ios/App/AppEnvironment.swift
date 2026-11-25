@@ -14,12 +14,15 @@ import SwiftData
     let launchedInDemo: Bool
     /// A forced demo pairs with the fake agent at any address, so adding a server works offline.
     let pairing: any AgentPairing
+    /// A forced demo installs on a fake server, so "Install over SSH" works offline too.
+    let sshConnector: any SSHConnector
 
     init(container: ModelContainer, secrets: any SecretStore, launchedInDemo: Bool) {
         self.container = container
         self.secrets = secrets
         self.launchedInDemo = launchedInDemo
         self.pairing = launchedInDemo ? FakeAgentPairing() : LiveAgentPairing()
+        self.sshConnector = launchedInDemo ? DemoSSHServer.connector() : LiveSSHConnector()
     }
 
     /// Picks stores for this launch. A forced demo keeps everything in memory, so App Review
@@ -41,19 +44,41 @@ import SwiftData
     }
 
     func makeContext(for entry: ServerEntry) -> ServerContext {
+        ServerContext(serverId: entry.id, client: makeClient(for: entry))
+    }
+
+    func makeClient(for entry: ServerEntry) -> any AgentClient {
         // Servers added in a forced demo were paired with the fake agent; they stay on it.
-        guard let endpoint = entry.endpoint, !launchedInDemo else {
-            return ServerContext(serverId: entry.id, client: FakeAgentClient())
-        }
+        guard let endpoint = entry.endpoint, !launchedInDemo else { return FakeAgentClient() }
         let pin = (try? secrets.read(.spki(entry.id))).flatMap { String(data: $0, encoding: .utf8) }
         let token = (try? secrets.read(.token(entry.id))).flatMap { String(data: $0, encoding: .utf8) }
         // Pairing stores the pin before the record exists; an empty pin matches no certificate,
         // so a record without one fails as pinMismatch and asks for pairing again.
-        let client = LiveAgentClient(baseURL: endpoint, pin: pin ?? "", token: token)
-        return ServerContext(serverId: entry.id, client: client)
+        return LiveAgentClient(baseURL: endpoint, pin: pin ?? "", token: token)
+    }
+
+    /// The client of a server by id, for models that outlive one list of entries.
+    func makeClient(serverId: UUID) -> any AgentClient {
+        let records = (try? container.mainContext.fetch(FetchDescriptor<ServerRecord>())) ?? []
+        let entry = ServerDirectory.entries(records: records, demoEnabled: true).first { $0.id == serverId }
+        return makeClient(for: entry ?? ServerDirectory.demoServer)
+    }
+
+    func makeStatusModel() -> ServerStatusModel {
+        ServerStatusModel(context: container.mainContext) { [unowned self] id in makeClient(serverId: id) }
+    }
+
+    func makeRemover() -> ServerRemover {
+        ServerRemover(secrets: secrets, context: container.mainContext)
     }
 
     func makeAddServerModel(deviceName: String) -> AddServerModel {
         AddServerModel(pairing: pairing, secrets: secrets, context: container.mainContext, deviceName: deviceName)
+    }
+
+    func makeSSHInstallModel(deviceName: String) -> SSHInstallModel {
+        SSHInstallModel(
+            connector: sshConnector, pairing: pairing, secrets: secrets, context: container.mainContext,
+            deviceName: deviceName)
     }
 }
