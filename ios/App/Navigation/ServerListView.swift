@@ -61,7 +61,7 @@ struct ServerListView: View {
         } detail: {
             if let entry = entries.first(where: { $0.id == selection }) {
                 NavigationStack {
-                    ServerScreen(entry: entry)
+                    ServerScreen(entry: entry, entries: entries) { selection = $0 }
                 }
                 .id(entry.id)
             } else {
